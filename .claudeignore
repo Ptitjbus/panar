@@ -1,0 +1,42 @@
+# ==========================================
+# Fichier d'exclusion pour Claude Code
+# ==========================================
+
+# 1. SÉCURITÉ (Sécurité redondante au cas où ils ne seraient pas dans le .gitignore)
+.env
+*.env
+*.keystore
+*.jks
+ios/Runner/GoogleService-Info.plist
+android/app/google-services.json
+
+# 2. FICHIERS GÉNÉRÉS & CACHE FLUTTER (Économie massive de tokens)
+build/
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+
+# 3. DÉPENDANCES NATIVES (Inutile pour la logique métier Dart)
+ios/Pods/
+macos/Pods/
+android/.gradle/
+
+# 4. ASSETS LOURDS (L'IA ne lit pas les images/vidéos dans le code)
+assets/images/
+assets/fonts/
+assets/icons/
+assets/videos/
+*.png
+*.jpg
+*.jpeg
+*.svg
+*.ttf
+*.mp3
+*.mp4
+
+# 5. FICHIERS DE GÉNÉRATION DE CODE DART
+# C'est important : on veut que l'IA lise/modifie les fichiers sources, 
+# pas les fichiers générés par build_runner.
+*.g.dart
+*.freezed.dart
+*.mocks.dart

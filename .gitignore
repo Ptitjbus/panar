@@ -1,0 +1,112 @@
+# ----------------------------------------------------------------------------
+# Flutter/Dart Specific
+# ----------------------------------------------------------------------------
+.dart_tool/
+.flutter-plugins
+.flutter-plugins-dependencies
+.packages
+.pub-cache/
+.pub/
+build/
+**/doc/api/
+/coverage/
+
+# Symbolication related
+app.*.symbols
+app.*.map.json
+
+# ----------------------------------------------------------------------------
+# Android Specific
+# ----------------------------------------------------------------------------
+android/**/gradle-wrapper.jar
+android/.gradle
+android/captures/
+android/gradlew
+android/gradlew.bat
+android/local.properties
+android/**/GeneratedPluginRegistrant.java
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# ----------------------------------------------------------------------------
+# iOS/macOS Specific
+# ----------------------------------------------------------------------------
+ios/.generated/
+ios/Flutter/App.framework
+ios/Flutter/Flutter.framework
+ios/Flutter/Generated.xcconfig
+ios/Flutter/flutter_assets/
+ios/Flutter/flutter_export_environment.sh
+ios/Flutter/.last_build_id
+ios/ServiceDefinitions.json
+ios/Runner/GeneratedPluginRegistrant.*
+
+# CocoaPods
+ios/Pods/
+ios/.symlinks/
+
+# Xcode user settings
+**/xcuserdata/
+**/DerivedData/
+
+# ----------------------------------------------------------------------------
+# Desktop (Windows/Linux/macOS)
+# ----------------------------------------------------------------------------
+# Windows
+windows/flutter/ephemeral/
+windows/CMakeCache.txt
+windows/CMakeFiles/
+windows/CMakeLists.txt.user
+windows/*.sln
+windows/*.vcxproj
+windows/*.vcxproj.filters
+
+# Linux
+linux/flutter/ephemeral/
+
+# macOS Desktop
+macos/Flutter/ephemeral/
+macos/Flutter/Generated.xcconfig
+macos/Flutter/flutter_export_environment.sh
+
+# ----------------------------------------------------------------------------
+# IDE Specific
+# ----------------------------------------------------------------------------
+# IntelliJ / Android Studio
+*.iml
+*.ipr
+*.iws
+.idea/
+
+# VS Code
+.vscode/
+
+# ----------------------------------------------------------------------------
+# Environment & Secrets
+# ----------------------------------------------------------------------------
+.env
+env
+.env.*
+!.env.example
+*.jks
+*.keystore
+google-services.json
+GoogleService-Info.plist
+
+# ----------------------------------------------------------------------------
+# Miscellaneous
+# ----------------------------------------------------------------------------
+*.class
+*.log
+*.pyc
+*.swp
+.DS_Store
+.atom/
+.build/
+.buildlog/
+.history
+.svn/
+.swiftpm/
+migrate_working_dir/
+Thumbs.db
