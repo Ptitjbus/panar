@@ -18,6 +18,15 @@ class HomePage extends ConsumerWidget {
       appBar: AppBar(
         title: const Text('Panar'),
         actions: [
+          // Bouton amis
+          IconButton(
+            icon: const Icon(Icons.people_outlined),
+            tooltip: 'Amis',
+            onPressed: () {
+              context.push(Routes.friends);
+            },
+          ),
+          // Bouton déconnexion
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
@@ -70,12 +79,12 @@ class HomePage extends ConsumerWidget {
                       // Avatar
                       CircleAvatar(
                         radius: 60,
-                        backgroundColor: Colors.blue,
+                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
                         child: Text(
                           profile.username[0].toUpperCase(),
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontSize: 48,
-                            color: Colors.white,
+                            color: Theme.of(context).colorScheme.onPrimaryContainer,
                             fontWeight: FontWeight.bold,
                           ),
                         ),
@@ -96,9 +105,9 @@ class HomePage extends ConsumerWidget {
                       // Email
                       Text(
                         user.email,
-                        style: Theme.of(
-                          context,
-                        ).textTheme.bodyLarge?.copyWith(color: Colors.grey),
+                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
+                              color: Theme.of(context).colorScheme.onSurfaceVariant,
+                            ),
                         textAlign: TextAlign.center,
                       ),
 
@@ -110,10 +119,10 @@ class HomePage extends ConsumerWidget {
                           padding: const EdgeInsets.all(16),
                           child: Column(
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.check_circle_outline,
                                 size: 64,
-                                color: Colors.green,
+                                color: Theme.of(context).colorScheme.primary,
                               ),
                               const SizedBox(height: 16),
                               Text(

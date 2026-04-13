@@ -8,9 +8,10 @@ import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/presentation/pages/signup_page.dart';
 import 'features/auth/presentation/pages/username_setup_page.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
-import 'features/home/presentation/pages/home_page.dart';
+import 'features/friends/presentation/pages/friends_modal_page.dart';
 import 'features/onboarding/presentation/pages/onboarding_page.dart';
 import 'features/profile/presentation/providers/profile_provider.dart';
+import 'shared/layouts/main_layout.dart';
 import 'shared/providers/shared_preferences_provider.dart';
 
 /// Router provider
@@ -96,7 +97,18 @@ final routerProvider = Provider<GoRouter>((ref) {
         path: Routes.usernameSetup,
         builder: (context, state) => const UsernameSetupPage(),
       ),
-      GoRoute(path: Routes.home, builder: (context, state) => const HomePage()),
+      GoRoute(
+        path: Routes.home,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final index = extra?['index'] as int? ?? 0;
+          return MainLayout(initialIndex: index);
+        },
+      ),
+      GoRoute(
+        path: Routes.friends,
+        builder: (context, state) => const FriendsModalPage(),
+      ),
     ],
   );
 });

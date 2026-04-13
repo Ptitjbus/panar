@@ -4,4 +4,5 @@ class Routes {
   static const String signup = '/signup';
   static const String usernameSetup = '/username-setup';
   static const String home = '/';
+  static const String friends = '/friends';
 }

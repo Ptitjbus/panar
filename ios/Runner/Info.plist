@@ -22,8 +22,23 @@
 	<string>$(FLUTTER_BUILD_NAME)</string>
 	<key>CFBundleSignature</key>
 	<string>????</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleTypeRole</key>
+			<string>Editor</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>com.example.panar</string>
+				<string>com.googleusercontent.apps.134799536471-8c4uh8dtroksojm9ihb4ucnna31uharc</string>
+				<string>com.googleusercontent.apps.134799536471-r49ag8egh56edhu99ir9sk75tnm82b0d</string>
+			</array>
+		</dict>
+	</array>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>GIDClientID</key>
+	<string>134799536471-8c4uh8dtroksojm9ihb4ucnna31uharc.apps.googleusercontent.com</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UIApplicationSceneManifest</key>
@@ -66,20 +81,5 @@
 		<string>UIInterfaceOrientationLandscapeLeft</string>
 		<string>UIInterfaceOrientationLandscapeRight</string>
 	</array>
-	<key>CFBundleURLTypes</key>
-	<array>
-		<dict>
-			<key>CFBundleTypeRole</key>
-			<string>Editor</string>
-			<key>CFBundleURLSchemes</key>
-			<array>
-				<string>com.example.panar</string>
-				<string>com.googleusercontent.apps.134799536471-8c4uh8dtroksojm9ihb4ucnna31uharc</string>
-				<string>com.googleusercontent.apps.134799536471-r49ag8egh56edhu99ir9sk75tnm82b0d</string>
-			</array>
-		</dict>
-	</array>
-	<key>GIDClientID</key>
-	<string>134799536471-8c4uh8dtroksojm9ihb4ucnna31uharc.apps.googleusercontent.com</string>
 </dict>
 </plist>
