@@ -9,6 +9,14 @@
     "supabase": {
       "url": "https://mcp.supabase.com/mcp?project_ref=uigqxwkpkmuitbziiadb&features=storage%2Cbranching%2Cfunctions%2Cdevelopment%2Cdebugging%2Cdatabase%2Caccount%2Cdocs",
       "type": "http"
+    },
+    "xcode": {
+      "type": "stdio",
+      "command": "xcrun",
+      "args": [
+        "mcpbridge"
+      ],
+      "env": {}
     }
   }
 }
