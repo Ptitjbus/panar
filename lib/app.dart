@@ -9,6 +9,11 @@ import 'features/auth/presentation/pages/signup_page.dart';
 import 'features/auth/presentation/pages/username_setup_page.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/friends/presentation/pages/friends_modal_page.dart';
+import 'features/run/presentation/pages/run_import_page.dart';
+import 'features/run/presentation/pages/run_launch_page.dart';
+import 'features/run/presentation/pages/run_reward_page.dart';
+import 'features/run/presentation/pages/run_stats_page.dart';
+import 'features/run/presentation/pages/run_tracking_page.dart';
 import 'features/onboarding/presentation/pages/onboarding_page.dart';
 import 'features/profile/presentation/providers/profile_provider.dart';
 import 'shared/layouts/main_layout.dart';
@@ -108,6 +113,34 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.friends,
         builder: (context, state) => const FriendsModalPage(),
+      ),
+      GoRoute(
+        path: Routes.runLaunch,
+        builder: (context, state) => const RunLaunchPage(),
+      ),
+      GoRoute(
+        path: Routes.runTracking,
+        builder: (context, state) => const RunTrackingPage(),
+      ),
+      GoRoute(
+        path: Routes.runReward,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final activityId = extra?['activityId'] as String?;
+          return RunRewardPage(activityId: activityId);
+        },
+      ),
+      GoRoute(
+        path: Routes.runStats,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          final activityId = extra?['activityId'] as String? ?? '';
+          return RunStatsPage(activityId: activityId);
+        },
+      ),
+      GoRoute(
+        path: Routes.runImport,
+        builder: (context, state) => const RunImportPage(),
       ),
     ],
   );

@@ -41,6 +41,22 @@
 	<string>134799536471-8c4uh8dtroksojm9ihb4ucnna31uharc.apps.googleusercontent.com</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSHealthClinicalHealthRecordsShareUsageDescription</key>
+	<string>Panar lit vos pas et calories pour enrichir vos statistiques de course et s'adapter à votre niveau.</string>
+	<key>NSHealthShareUsageDescription</key>
+	<string>Panar lit vos pas et calories pour enrichir vos statistiques de course.</string>
+	<key>NSHealthUpdateUsageDescription</key>
+	<string>Panar enregistre vos courses dans Santé pour un suivi complet de votre activité.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>Panar utilise votre position en arrière-plan pour enregistrer votre parcours même lorsque l'écran est éteint.</string>
+	<key>NSLocationAlwaysUsageDescription</key>
+	<string>Panar continue à enregistrer votre course lorsque l'écran est éteint.</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>Panar a besoin de votre position pour suivre votre course en temps réel.</string>
+	<key>NSSupportsLiveActivities</key>
+	<true/>
+	<key>NSSupportsLiveActivitiesFrequentUpdates</key>
+	<true/>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
@@ -64,6 +80,11 @@
 	</dict>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
+	<key>UIBackgroundModes</key>
+	<array>
+		<string>location</string>
+		<string>fetch</string>
+	</array>
 	<key>UILaunchStoryboardName</key>
 	<string>LaunchScreen</string>
 	<key>UIMainStoryboardFile</key>

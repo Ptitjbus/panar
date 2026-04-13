@@ -103,6 +103,9 @@ When working with Supabase database:
 3. Use the `mcp__supabase__execute_sql` tool for data queries
 4. Always review table schemas before generating models or writing queries
 
+## Skills
+Always invoke the `flutter` skill before answering Flutter-related questions or implementing Flutter features.
+
 ## Platform Support
 The project supports all Flutter platforms:
 - Android

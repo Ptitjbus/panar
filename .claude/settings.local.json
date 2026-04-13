@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "mcp__supabase__list_tables",
+      "mcp__supabase__list_migrations",
+      "Bash(flutter pub:*)",
+      "mcp__supabase__apply_migration",
+      "Bash(flutter analyze:*)",
+      "WebFetch(domain:pub.dev)",
+      "mcp__dart__analyze_files",
+      "mcp__xcode__XcodeListWindows",
+      "mcp__xcode__BuildProject",
+      "mcp__xcode__XcodeRead",
+      "mcp__xcode__GetBuildLog",
+      "mcp__xcode__XcodeLS",
+      "Bash(sed -n '600,615p' /Users/killianelattar/Workspace/Panar-Flutter/ios/Runner.xcodeproj/project.pbxproj)",
+      "Bash(sed -n '731,745p' /Users/killianelattar/Workspace/Panar-Flutter/ios/Runner.xcodeproj/project.pbxproj)",
+      "Bash(sed -n '782,795p' /Users/killianelattar/Workspace/Panar-Flutter/ios/Runner.xcodeproj/project.pbxproj)",
+      "Bash(sed -n '620,640p' /Users/killianelattar/Workspace/Panar-Flutter/ios/Runner.xcodeproj/project.pbxproj)",
+      "Bash(sed -n '804,845p' /Users/killianelattar/Workspace/Panar-Flutter/ios/Runner.xcodeproj/project.pbxproj)",
+      "Bash(python3:*)",
+      "Bash(pod install:*)"
+    ]
+  },
+  "enabledMcpjsonServers": [
+    "dart",
+    "supabase"
+  ]
+}
