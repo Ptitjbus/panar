@@ -168,7 +168,9 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
     if (userId == null) return null;
 
     try {
-      final activity = await _ref.read(runRepositoryProvider).saveActivity(
+      final activity = await _ref
+          .read(runRepositoryProvider)
+          .saveActivity(
             userId: userId,
             startedAt: startedAt,
             endedAt: endedAt,
@@ -217,7 +219,8 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
     } catch (_) {
       if (mounted) {
         state = state.copyWith(
-            errorMessage: 'Erreur lors de la sauvegarde de la course.');
+          errorMessage: 'Erreur lors de la sauvegarde de la course.',
+        );
       }
       return null;
     }
@@ -265,11 +268,12 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
     }
 
     _locationSubscription =
-        Geolocator.getPositionStream(locationSettings: settings)
-            .listen((position) {
-      if (!mounted) return;
-      _onNewPosition(position);
-    });
+        Geolocator.getPositionStream(locationSettings: settings).listen((
+          position,
+        ) {
+          if (!mounted) return;
+          _onNewPosition(position);
+        });
   }
 
   void _onNewPosition(Position position) {
@@ -345,11 +349,13 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
   }) {
     final id = _liveActivityId;
     if (id == null) return;
-    _liveActivities.updateActivity(id, {
-      'distance': distance,
-      'duration': duration,
-      'pace': pace,
-    }).catchError((_) {});
+    _liveActivities
+        .updateActivity(id, {
+          'distance': distance,
+          'duration': duration,
+          'pace': pace,
+        })
+        .catchError((_) {});
   }
 
   Future<void> _endLiveActivity() async {
@@ -406,5 +412,5 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
 
 final runTrackingProvider =
     StateNotifierProvider<RunTrackingNotifier, RunTrackingState>((ref) {
-  return RunTrackingNotifier(ref);
-});
+      return RunTrackingNotifier(ref);
+    });

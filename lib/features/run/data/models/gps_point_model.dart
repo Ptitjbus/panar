@@ -13,7 +13,9 @@ class GpsPointModel extends GpsPointEntity {
     return GpsPointModel(
       latitude: (json['latitude'] as num).toDouble(),
       longitude: (json['longitude'] as num).toDouble(),
-      altitude: json['altitude'] != null ? (json['altitude'] as num).toDouble() : null,
+      altitude: json['altitude'] != null
+          ? (json['altitude'] as num).toDouble()
+          : null,
       recordedAt: DateTime.parse(json['recorded_at'] as String),
       sequence: json['sequence'] as int,
     );

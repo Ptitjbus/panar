@@ -6,15 +6,13 @@ class FriendsModalPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Amis'),
-      ),
+      appBar: AppBar(title: const Text('Amis')),
       body: Center(
         child: Text(
           'Amis',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
     );

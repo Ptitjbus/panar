@@ -49,9 +49,10 @@ class _TreasureChestWidgetState extends State<TreasureChestWidget>
     _coinsScale = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _coinsController, curve: Curves.elasticOut),
     );
-    _coinsOpacity = Tween<double>(begin: 0, end: 1).animate(
-      CurvedAnimation(parent: _coinsController, curve: Curves.easeIn),
-    );
+    _coinsOpacity = Tween<double>(
+      begin: 0,
+      end: 1,
+    ).animate(CurvedAnimation(parent: _coinsController, curve: Curves.easeIn));
     _glow = Tween<double>(begin: 0.4, end: 1.0).animate(
       CurvedAnimation(parent: _glowController, curve: Curves.easeInOut),
     );
@@ -146,8 +147,7 @@ class _TreasureChestWidgetState extends State<TreasureChestWidget>
             ),
 
           // Particules de pièces
-          if (widget.isOpen)
-            ..._buildCoinParticles(gold),
+          if (widget.isOpen) ..._buildCoinParticles(gold),
         ],
       ),
     );
@@ -178,11 +178,17 @@ class _TreasureChestWidgetState extends State<TreasureChestWidget>
                     color: gold,
                     shape: BoxShape.circle,
                     boxShadow: [
-                      BoxShadow(color: gold.withValues(alpha: 0.6), blurRadius: 4),
+                      BoxShadow(
+                        color: gold.withValues(alpha: 0.6),
+                        blurRadius: 4,
+                      ),
                     ],
                   ),
                   child: const Center(
-                    child: Text('₽', style: TextStyle(fontSize: 8, color: Colors.white)),
+                    child: Text(
+                      '₽',
+                      style: TextStyle(fontSize: 8, color: Colors.white),
+                    ),
                   ),
                 ),
               ),
@@ -234,9 +240,16 @@ class _ChestBody extends StatelessWidget {
             decoration: BoxDecoration(
               color: const Color(0xFFFFB800),
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.white.withValues(alpha: 0.5), width: 2),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.5),
+                width: 2,
+              ),
             ),
-            child: const Icon(Icons.lock_outline, size: 12, color: Colors.white),
+            child: const Icon(
+              Icons.lock_outline,
+              size: 12,
+              color: Colors.white,
+            ),
           ),
           const SizedBox(height: 6),
           // Bande dorée
@@ -273,10 +286,7 @@ class _ChestLid extends StatelessWidget {
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [
-            color.withValues(alpha: 0.9),
-            color,
-          ],
+          colors: [color.withValues(alpha: 0.9), color],
         ),
         boxShadow: [
           BoxShadow(

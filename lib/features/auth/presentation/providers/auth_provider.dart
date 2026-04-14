@@ -120,6 +120,7 @@ class AuthNotifier extends StateNotifier<AuthState> {
       return false;
     }
   }
+
   /// Sign out
   Future<void> signOut() async {
     state = state.copyWith(isLoading: true, errorMessage: null);

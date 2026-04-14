@@ -3,17 +3,14 @@ import 'package:go_router/go_router.dart';
 
 import '../../core/constants/route_constants.dart';
 import '../../features/challenges/presentation/pages/challenges_page.dart';
-import '../../features/home/presentation/pages/home_page.dart';
+import '../../features/home/presentation/pages/place_screen.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/shop/presentation/pages/shop_page.dart';
 
 class MainLayout extends StatefulWidget {
   final int initialIndex;
 
-  const MainLayout({
-    super.key,
-    this.initialIndex = 0,
-  });
+  const MainLayout({super.key, this.initialIndex = 0});
 
   @override
   State<MainLayout> createState() => _MainLayoutState();
@@ -24,7 +21,7 @@ class _MainLayoutState extends State<MainLayout> {
   late PageController _pageController;
 
   static const List<Widget> _pages = [
-    HomePage(),
+    PlaceScreen(),
     ChallengesPage(),
     ShopPage(),
     ProfilePage(),
@@ -64,6 +61,9 @@ class _MainLayoutState extends State<MainLayout> {
       body: PageView(
         controller: _pageController,
         onPageChanged: _onPageChanged,
+        physics: _currentIndex == 0
+            ? const NeverScrollableScrollPhysics()
+            : const AlwaysScrollableScrollPhysics(),
         children: _pages,
       ),
       floatingActionButton: _RunFab(
@@ -126,6 +126,7 @@ class _RunFab extends StatelessWidget {
       width: 64,
       height: 64,
       child: FloatingActionButton(
+        heroTag: 'run_fab',
         onPressed: onPressed,
         backgroundColor: colorScheme.primary,
         foregroundColor: colorScheme.onPrimary,
@@ -155,8 +156,9 @@ class _NavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    final color =
-        isSelected ? colorScheme.primary : colorScheme.onSurfaceVariant;
+    final color = isSelected
+        ? colorScheme.primary
+        : colorScheme.onSurfaceVariant;
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -173,8 +175,7 @@ class _NavItem extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 10,
                   color: color,
-                  fontWeight:
-                      isSelected ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
                 ),
               ),
             ],

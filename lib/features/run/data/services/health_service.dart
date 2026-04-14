@@ -20,7 +20,10 @@ class HealthService {
       final types = [..._readTypes, HealthDataType.WORKOUT];
       final permissions = _readTypes.map((_) => HealthDataAccess.READ).toList()
         ..add(HealthDataAccess.READ_WRITE);
-      return await Health().requestAuthorization(types, permissions: permissions);
+      return await Health().requestAuthorization(
+        types,
+        permissions: permissions,
+      );
     } catch (_) {
       return false;
     }

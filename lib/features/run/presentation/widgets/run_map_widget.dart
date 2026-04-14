@@ -3,6 +3,7 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../domain/entities/gps_point_entity.dart';
+import '../../../../shared/widgets/animated_avatar_widget.dart';
 
 class RunMapWidget extends StatelessWidget {
   final List<GpsPointEntity> points;
@@ -26,10 +27,7 @@ class RunMapWidget extends StatelessWidget {
 
     return FlutterMap(
       mapController: mapController,
-      options: MapOptions(
-        initialCenter: center,
-        initialZoom: 16,
-      ),
+      options: MapOptions(initialCenter: center, initialZoom: 16),
       children: [
         TileLayer(
           urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
@@ -50,14 +48,12 @@ class RunMapWidget extends StatelessWidget {
             markers: [
               Marker(
                 point: latLngPoints.last,
-                width: 20,
-                height: 20,
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: theme.colorScheme.primary,
-                    shape: BoxShape.circle,
-                    border: Border.all(color: Colors.white, width: 2),
-                  ),
+                width: 40,
+                height: 40,
+                child: const AnimatedAvatarWidget(
+                  isMoving: true, // Always walking during a run
+                  size: 40,
+                  showShadow: true,
                 ),
               ),
             ],

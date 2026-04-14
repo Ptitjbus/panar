@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/route_constants.dart';
 import '../../../../shared/widgets/loading_indicator.dart';
+import '../../../../shared/widgets/animated_avatar_widget.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 
@@ -77,17 +78,10 @@ class HomePage extends ConsumerWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       // Avatar
-                      CircleAvatar(
-                        radius: 60,
-                        backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                        child: Text(
-                          profile.username[0].toUpperCase(),
-                          style: TextStyle(
-                            fontSize: 48,
-                            color: Theme.of(context).colorScheme.onPrimaryContainer,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
+                      const AnimatedAvatarWidget(
+                        isMoving: false,
+                        size: 120,
+                        showShadow: true,
                       ),
 
                       const SizedBox(height: 24),
@@ -106,8 +100,8 @@ class HomePage extends ConsumerWidget {
                       Text(
                         user.email,
                         style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: Theme.of(context).colorScheme.onSurfaceVariant,
-                            ),
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
+                        ),
                         textAlign: TextAlign.center,
                       ),
 

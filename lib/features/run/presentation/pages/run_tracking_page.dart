@@ -65,7 +65,9 @@ class _RunTrackingPageState extends ConsumerState<RunTrackingPage> {
               child: Padding(
                 padding: const EdgeInsets.all(8),
                 child: CircleAvatar(
-                  backgroundColor: theme.colorScheme.surface.withValues(alpha: 0.85),
+                  backgroundColor: theme.colorScheme.surface.withValues(
+                    alpha: 0.85,
+                  ),
                   child: IconButton(
                     icon: const Icon(Icons.arrow_back),
                     onPressed: () => _handleBackButton(runState.status),
@@ -87,7 +89,8 @@ class _RunTrackingPageState extends ConsumerState<RunTrackingPage> {
                     child: Text(
                       runState.errorMessage!,
                       style: TextStyle(
-                          color: theme.colorScheme.onErrorContainer),
+                        color: theme.colorScheme.onErrorContainer,
+                      ),
                     ),
                   ),
                 ),
@@ -102,7 +105,8 @@ class _RunTrackingPageState extends ConsumerState<RunTrackingPage> {
                 decoration: BoxDecoration(
                   color: theme.colorScheme.surface.withValues(alpha: 0.95),
                   borderRadius: const BorderRadius.vertical(
-                      top: Radius.circular(20)),
+                    top: Radius.circular(20),
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withValues(alpha: 0.15),
@@ -154,7 +158,9 @@ class _RunTrackingPageState extends ConsumerState<RunTrackingPage> {
                             if (runState.status == RunStatus.running) {
                               ref.read(runTrackingProvider.notifier).pauseRun();
                             } else if (runState.status == RunStatus.paused) {
-                              ref.read(runTrackingProvider.notifier).resumeRun();
+                              ref
+                                  .read(runTrackingProvider.notifier)
+                                  .resumeRun();
                             }
                           },
                           backgroundColor: theme.colorScheme.secondaryContainer,
@@ -215,8 +221,7 @@ class _RunTrackingPageState extends ConsumerState<RunTrackingPage> {
   Future<void> _handleStop() async {
     final confirmed = await _showStopDialog();
     if (!confirmed || !mounted) return;
-    final activityId =
-        await ref.read(runTrackingProvider.notifier).stopRun();
+    final activityId = await ref.read(runTrackingProvider.notifier).stopRun();
     if (!mounted) return;
     context.go(Routes.runReward, extra: {'activityId': activityId});
   }
@@ -227,7 +232,8 @@ class _RunTrackingPageState extends ConsumerState<RunTrackingPage> {
       builder: (ctx) => AlertDialog(
         title: const Text('Terminer la course ?'),
         content: const Text(
-            'Votre progression sera sauvegardée. Voulez-vous vraiment terminer ?'),
+          'Votre progression sera sauvegardée. Voulez-vous vraiment terminer ?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(false),

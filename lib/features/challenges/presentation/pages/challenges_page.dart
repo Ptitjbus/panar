@@ -9,9 +9,9 @@ class ChallengesPage extends StatelessWidget {
       body: Center(
         child: Text(
           'Défis',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
     );

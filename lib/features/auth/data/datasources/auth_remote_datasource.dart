@@ -9,8 +9,18 @@ import '../models/user_model.dart';
 /// Remote data source for authentication operations using Supabase
 class AuthRemoteDataSource {
   final SupabaseClient _supabaseClient;
+  GoogleSignIn? _googleSignIn;
 
   AuthRemoteDataSource(this._supabaseClient);
+
+  /// Get or initialize GoogleSignIn instance
+  GoogleSignIn _getGoogleSignIn() {
+    if (_googleSignIn != null) return _googleSignIn!;
+
+    final webClientId = dotenv.env['GOOGLE_WEB_CLIENT_ID'];
+    _googleSignIn = GoogleSignIn(serverClientId: webClientId);
+    return _googleSignIn!;
+  }
 
   /// Sign up with email and password
   Future<UserModel> signUp({
@@ -59,28 +69,23 @@ class AuthRemoteDataSource {
   }
 
   /// Sign in with Google
-  /// 
-  /// Note for iOS: The "Skip nonce check" option must be enabled in the 
-  /// Supabase Google Provider settings due to how the Google iOS SDK 
+  ///
+  /// Note for iOS: The "Skip nonce check" option must be enabled in the
+  /// Supabase Google Provider settings due to how the Google iOS SDK
   /// handles nonces natively.
   Future<UserModel> signInWithGoogle() async {
     try {
-      // 1. Get the Web Client ID from environment (required for Supabase verification)
-      final webClientId = dotenv.env['GOOGLE_WEB_CLIENT_ID'];
+      // 1. Get the Google Sign-In instance
+      final googleSignIn = _getGoogleSignIn();
 
-      // 2. Initialize Google Sign-In
-      final googleSignIn = GoogleSignIn(
-        serverClientId: webClientId,
-      );
-
-      // 3. Start the native sign-in flow
+      // 2. Start the native sign-in flow
       final googleUser = await googleSignIn.signIn();
 
       if (googleUser == null) {
         throw const AuthFailure('Google sign-in was cancelled');
       }
 
-      // 4. Retrieve tokens
+      // 3. Retrieve tokens
       final googleAuth = await googleUser.authentication;
       final idToken = googleAuth.idToken;
       final accessToken = googleAuth.accessToken;
@@ -89,7 +94,7 @@ class AuthRemoteDataSource {
         throw const AuthFailure('Failed to get Google ID Token');
       }
 
-      // 5. Authenticate with Supabase
+      // 4. Authenticate with Supabase
       final response = await _supabaseClient.auth.signInWithIdToken(
         provider: OAuthProvider.google,
         idToken: idToken,
@@ -113,9 +118,9 @@ class AuthRemoteDataSource {
   Future<void> signOut() async {
     try {
       await _supabaseClient.auth.signOut();
-      
+
       // Also sign out from Google to allow user to switch accounts next time
-      final googleSignIn = GoogleSignIn();
+      final googleSignIn = _getGoogleSignIn();
       if (await googleSignIn.isSignedIn()) {
         await googleSignIn.signOut();
       }

@@ -31,13 +31,15 @@ class RunRepositoryImpl implements RunRepository {
     );
 
     final models = points
-        .map((p) => GpsPointModel(
-              latitude: p.latitude,
-              longitude: p.longitude,
-              altitude: p.altitude,
-              recordedAt: p.recordedAt,
-              sequence: p.sequence,
-            ))
+        .map(
+          (p) => GpsPointModel(
+            latitude: p.latitude,
+            longitude: p.longitude,
+            altitude: p.altitude,
+            recordedAt: p.recordedAt,
+            sequence: p.sequence,
+          ),
+        )
         .toList();
 
     await _dataSource.insertActivityPoints(activity.id, models);

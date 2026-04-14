@@ -9,9 +9,9 @@ class FriendsPage extends StatelessWidget {
       body: Center(
         child: Text(
           'Amis',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
     );

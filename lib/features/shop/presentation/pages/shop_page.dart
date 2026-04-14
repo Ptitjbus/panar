@@ -9,9 +9,9 @@ class ShopPage extends StatelessWidget {
       body: Center(
         child: Text(
           'Boutique',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
     );

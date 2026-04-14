@@ -7,10 +7,7 @@ import '../../domain/entities/gps_point_entity.dart';
 class RunStaticMapWidget extends StatelessWidget {
   final List<GpsPointEntity> points;
 
-  const RunStaticMapWidget({
-    super.key,
-    required this.points,
-  });
+  const RunStaticMapWidget({super.key, required this.points});
 
   @override
   Widget build(BuildContext context) {

@@ -17,11 +17,11 @@ import '../../domain/entities/gps_point_entity.dart';
 /// des 30 derniers jours.
 final _externalWorkoutsProvider =
     FutureProvider.autoDispose<List<HealthDataPoint>>((ref) async {
-  final service = ref.watch(healthServiceProvider);
-  await service.requestPermissions();
-  final since = DateTime.now().subtract(const Duration(days: 30));
-  return service.getExternalWorkouts(since);
-});
+      final service = ref.watch(healthServiceProvider);
+      await service.requestPermissions();
+      final since = DateTime.now().subtract(const Duration(days: 30));
+      return service.getExternalWorkouts(since);
+    });
 
 class RunImportPage extends ConsumerWidget {
   const RunImportPage({super.key});
@@ -55,8 +55,11 @@ class RunImportPage extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.health_and_safety_outlined,
-                  size: 64, color: theme.colorScheme.error),
+              Icon(
+                Icons.health_and_safety_outlined,
+                size: 64,
+                color: theme.colorScheme.error,
+              ),
               const SizedBox(height: 16),
               const Text(
                 'Impossible d\'accéder à Santé.',
@@ -79,9 +82,11 @@ class RunImportPage extends ConsumerWidget {
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.directions_run_outlined,
-                      size: 64,
-                      color: theme.colorScheme.onSurfaceVariant),
+                  Icon(
+                    Icons.directions_run_outlined,
+                    size: 64,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
                   const SizedBox(height: 16),
                   Text(
                     'Aucune course trouvée',
@@ -91,7 +96,8 @@ class RunImportPage extends ConsumerWidget {
                   Text(
                     'Aucune course des 30 derniers jours dans Santé.',
                     style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant),
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                 ],
@@ -163,7 +169,9 @@ class _WorkoutImportCardState extends ConsumerState<_WorkoutImportCard> {
         : null;
 
     try {
-      await ref.read(runRepositoryProvider).saveActivity(
+      await ref
+          .read(runRepositoryProvider)
+          .saveActivity(
             userId: userId,
             startedAt: start,
             endedAt: end,
@@ -207,22 +215,28 @@ class _WorkoutImportCardState extends ConsumerState<_WorkoutImportCard> {
                 color: theme.colorScheme.primaryContainer,
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(Icons.directions_run,
-                  color: theme.colorScheme.onPrimaryContainer),
+              child: Icon(
+                Icons.directions_run,
+                color: theme.colorScheme.onPrimaryContainer,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text(dateStr,
-                      style: theme.textTheme.titleSmall
-                          ?.copyWith(fontWeight: FontWeight.bold)),
+                  Text(
+                    dateStr,
+                    style: theme.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
                   const SizedBox(height: 2),
                   Text(
                     '${distKm.toStringAsFixed(2)} km · $durationStr',
                     style: theme.textTheme.bodySmall?.copyWith(
-                        color: theme.colorScheme.onSurfaceVariant),
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
                   ),
                 ],
               ),

@@ -9,9 +9,9 @@ class ProfilePage extends StatelessWidget {
       body: Center(
         child: Text(
           'Profil',
-          style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
+          style: Theme.of(
+            context,
+          ).textTheme.headlineMedium?.copyWith(fontWeight: FontWeight.bold),
         ),
       ),
     );

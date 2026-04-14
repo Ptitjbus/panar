@@ -37,11 +37,16 @@ class RunStatsPage extends ConsumerWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(Icons.error_outline,
-                  size: 48, color: theme.colorScheme.error),
+              Icon(
+                Icons.error_outline,
+                size: 48,
+                color: theme.colorScheme.error,
+              ),
               const SizedBox(height: 16),
-              Text('Erreur lors du chargement',
-                  style: theme.textTheme.titleMedium),
+              Text(
+                'Erreur lors du chargement',
+                style: theme.textTheme.titleMedium,
+              ),
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () =>
@@ -92,8 +97,7 @@ class RunStatsPage extends ConsumerWidget {
                     Expanded(
                       child: RunMetricCard(
                         label: 'ALLURE',
-                        value: activity.formattedPace
-                            .replaceAll(' /km', ''),
+                        value: activity.formattedPace.replaceAll(' /km', ''),
                         unit: '/km',
                       ),
                     ),
@@ -126,8 +130,19 @@ class RunStatsPage extends ConsumerWidget {
 
   String _formatDate(DateTime date) {
     const months = [
-      '', 'jan.', 'fév.', 'mar.', 'avr.', 'mai', 'juin',
-      'juil.', 'août', 'sep.', 'oct.', 'nov.', 'déc.'
+      '',
+      'jan.',
+      'fév.',
+      'mar.',
+      'avr.',
+      'mai',
+      'juin',
+      'juil.',
+      'août',
+      'sep.',
+      'oct.',
+      'nov.',
+      'déc.',
     ];
     return '${date.day} ${months[date.month]}';
   }

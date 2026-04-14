@@ -67,7 +67,9 @@ final routerProvider = Provider<GoRouter>((ref) {
       // Logged in but no username (or temporary username) → username setup
       final needsUsernameSetup =
           username == null || (username?.startsWith('user_') ?? false);
-      if (isLoggedIn && needsUsernameSetup && location != Routes.usernameSetup) {
+      if (isLoggedIn &&
+          needsUsernameSetup &&
+          location != Routes.usernameSetup) {
         return Routes.usernameSetup;
       }
 

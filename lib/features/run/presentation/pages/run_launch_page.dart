@@ -42,7 +42,8 @@ class RunLaunchPage extends ConsumerWidget {
             const _ModeCard(
               icon: Icons.map_outlined,
               title: 'Parcours généré',
-              subtitle: 'Un parcours adapté à vos objectifs. Bientôt disponible.',
+              subtitle:
+                  'Un parcours adapté à vos objectifs. Bientôt disponible.',
               enabled: false,
               badge: 'Bientôt',
             ),
@@ -124,7 +125,9 @@ class _ModeCard extends StatelessWidget {
                             const SizedBox(width: 8),
                             Container(
                               padding: const EdgeInsets.symmetric(
-                                  horizontal: 8, vertical: 2),
+                                horizontal: 8,
+                                vertical: 2,
+                              ),
                               decoration: BoxDecoration(
                                 color: theme.colorScheme.secondaryContainer,
                                 borderRadius: BorderRadius.circular(12),

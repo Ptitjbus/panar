@@ -31,7 +31,9 @@ class ActivityEntity {
   }
 
   String get formattedPace {
-    if (avgPaceSecondsPerKm == null || avgPaceSecondsPerKm! <= 0) return '--:-- /km';
+    if (avgPaceSecondsPerKm == null || avgPaceSecondsPerKm! <= 0) {
+      return '--:-- /km';
+    }
     final minutes = avgPaceSecondsPerKm! ~/ 60;
     final seconds = avgPaceSecondsPerKm! % 60;
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')} /km';
