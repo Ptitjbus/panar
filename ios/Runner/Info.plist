@@ -47,6 +47,8 @@
 	<string>Panar lit vos pas et calories pour enrichir vos statistiques de course.</string>
 	<key>NSHealthUpdateUsageDescription</key>
 	<string>Panar enregistre vos courses dans Santé pour un suivi complet de votre activité.</string>
+	<key>NSMicrophoneUsageDescription</key>
+	<string>Panar utilise le microphone pour enregistrer des messages vocaux à envoyer à vos amis en course.</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>Panar utilise votre position en arrière-plan pour enregistrer votre parcours même lorsque l'écran est éteint.</string>
 	<key>NSLocationAlwaysUsageDescription</key>

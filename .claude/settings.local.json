@@ -19,7 +19,11 @@
       "Bash(sed -n '620,640p' /Users/killianelattar/Workspace/Panar-Flutter/ios/Runner.xcodeproj/project.pbxproj)",
       "Bash(sed -n '804,845p' /Users/killianelattar/Workspace/Panar-Flutter/ios/Runner.xcodeproj/project.pbxproj)",
       "Bash(python3:*)",
-      "Bash(pod install:*)"
+      "Bash(pod install:*)",
+      "Bash(ls -la /Users/killianelattar/Workspace/Panar-Flutter/lib/features/*/)",
+      "Bash(git log:*)",
+      "mcp__supabase__list_storage_buckets",
+      "mcp__supabase__execute_sql"
     ]
   },
   "enabledMcpjsonServers": [

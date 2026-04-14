@@ -1,3 +1,4 @@
+import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -9,6 +10,23 @@ import 'shared/providers/shared_preferences_provider.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Configure audio session: ambient category uses ringer volume (not media volume)
+  // so notification sounds are always audible at the user's normal ring volume.
+  await AudioPlayer.global.setAudioContext(
+    AudioContext(
+      iOS: AudioContextIOS(
+        category: AVAudioSessionCategory.ambient,
+      ),
+      android: const AudioContextAndroid(
+        isSpeakerphoneOn: false,
+        stayAwake: false,
+        contentType: AndroidContentType.sonification,
+        usageType: AndroidUsageType.notificationRingtone,
+        audioFocus: AndroidAudioFocus.gainTransientMayDuck,
+      ),
+    ),
+  );
 
   // Load environment variables
   await dotenv.load(fileName: ".env");

@@ -1,5 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+
+import '../../../../core/constants/route_constants.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../live_interactions/presentation/providers/run_session_provider.dart';
 import '../../domain/entities/friendship_entity.dart';
 import '../providers/friends_provider.dart';
 
@@ -66,28 +71,71 @@ class FriendListItem extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final currentUserId = ref.watch(authStateProvider).value?.id;
+    final friendId = currentUserId != null
+        ? friendship.getOtherUserId(currentUserId)
+        : null;
+
+    final activeSessions = ref.watch(activeFriendSessionsProvider).value ?? [];
+    final activeSession = friendId != null
+        ? activeSessions.where((s) => s.userId == friendId).firstOrNull
+        : null;
+
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
       child: ListTile(
         leading: CircleAvatar(child: Text(friendUsername[0].toUpperCase())),
         title: Text('@$friendUsername'),
-        trailing: PopupMenuButton<String>(
-          icon: const Icon(Icons.more_vert),
-          onSelected: (value) {
-            if (value == 'remove') {
-              _showRemoveConfirmation(context, ref);
-            }
-          },
-          itemBuilder: (context) => [
-            const PopupMenuItem(
-              value: 'remove',
-              child: Row(
+        subtitle: activeSession != null
+            ? Row(
                 children: [
-                  Icon(Icons.person_remove, color: Colors.red),
-                  SizedBox(width: 8),
-                  Text('Retirer cet ami', style: TextStyle(color: Colors.red)),
+                  const Icon(Icons.directions_run, size: 14, color: Colors.green),
+                  const SizedBox(width: 4),
+                  Text(
+                    'En course — ${activeSession.formattedDistance} km',
+                    style: const TextStyle(color: Colors.green, fontSize: 12),
+                  ),
                 ],
+              )
+            : null,
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (activeSession != null)
+              IconButton(
+                icon: const Icon(Icons.visibility, color: Colors.green),
+                tooltip: 'Suivre en direct',
+                onPressed: () => context.push(
+                  Routes.friendLiveRun,
+                  extra: {
+                    'sessionId': activeSession.id,
+                    'runnerId': friendId,
+                    'runnerName': friendUsername,
+                  },
+                ),
               ),
+            PopupMenuButton<String>(
+              icon: const Icon(Icons.more_vert),
+              onSelected: (value) {
+                if (value == 'remove') {
+                  _showRemoveConfirmation(context, ref);
+                }
+              },
+              itemBuilder: (context) => [
+                const PopupMenuItem(
+                  value: 'remove',
+                  child: Row(
+                    children: [
+                      Icon(Icons.person_remove, color: Colors.red),
+                      SizedBox(width: 8),
+                      Text(
+                        'Retirer cet ami',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ],
         ),

@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -5,6 +6,10 @@ import 'package:go_router/go_router.dart';
 import 'package:latlong2/latlong.dart';
 
 import '../../../../core/constants/route_constants.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../live_interactions/domain/entities/run_interaction_entity.dart';
+import '../../../live_interactions/presentation/providers/live_interactions_provider.dart';
+import '../../../live_interactions/presentation/widgets/interaction_overlay_widget.dart';
 import '../providers/run_tracking_provider.dart';
 import '../widgets/run_map_widget.dart';
 import '../widgets/run_metric_card.dart';
@@ -93,6 +98,22 @@ class _RunTrackingPageState extends ConsumerState<RunTrackingPage> {
                       ),
                     ),
                   ),
+                ),
+              ),
+
+            // Overlay interactions amis
+            const InteractionOverlayWidget(),
+
+            // Bouton debug (mode debug uniquement)
+            if (kDebugMode)
+              Positioned(
+                top: MediaQuery.of(context).padding.top + 8,
+                right: 16,
+                child: FloatingActionButton.small(
+                  heroTag: 'debug_interactions',
+                  backgroundColor: Colors.purple,
+                  onPressed: () => _showDebugPanel(context, ref),
+                  child: const Icon(Icons.bug_report, color: Colors.white),
                 ),
               ),
 
@@ -194,6 +215,122 @@ class _RunTrackingPageState extends ConsumerState<RunTrackingPage> {
     );
   }
 
+  void _showDebugPanel(BuildContext context, WidgetRef ref) {
+    final runState = ref.read(runTrackingProvider);
+
+    void inject(InteractionType type, {String? content, String? audioUrl}) {
+      ref.read(incomingInteractionsProvider.notifier).debugInject(
+        RunInteractionEntity(
+          id: 'debug_${DateTime.now().millisecondsSinceEpoch}',
+          sessionId: 'debug',
+          senderId: 'debug',
+          runnerId: 'debug',
+          type: type,
+          content: content,
+          audioUrl: audioUrl,
+          createdAt: DateTime.now(),
+          senderName: 'Kevin (debug)',
+        ),
+      );
+      Navigator.of(context).pop();
+    }
+
+    void openFriendView() {
+      final sessionId = runState.liveSessionId;
+      if (sessionId == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pas encore de session active — démarre d\'abord la course.'),
+          ),
+        );
+        return;
+      }
+      Navigator.of(context).pop();
+      context.push(
+        Routes.friendLiveRun,
+        extra: {
+          'sessionId': sessionId,
+          'runnerId': ref.read(authStateProvider).value?.id ?? '',
+          'runnerName': 'Toi (debug)',
+        },
+      );
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      isScrollControlled: true,
+      builder: (ctx) => DraggableScrollableSheet(
+        expand: false,
+        initialChildSize: 0.55,
+        minChildSize: 0.3,
+        maxChildSize: 0.85,
+        builder: (ctx, scrollController) => Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+              child: Text(
+                '🐛 Debug — Interactions live',
+                style: Theme.of(ctx).textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView(
+                controller: scrollController,
+                children: [
+                  ListTile(
+                    leading: const Icon(Icons.people_alt_rounded, color: Colors.teal),
+                    title: const Text('Voir comme ami'),
+                    subtitle: Text(
+                      runState.liveSessionId != null
+                          ? 'Ouvre la vue ami sur ta session'
+                          : 'Démarre d\'abord la course',
+                    ),
+                    onTap: openFriendView,
+                  ),
+                  const Divider(height: 1),
+                  ListTile(
+                    leading: const Icon(Icons.favorite, color: Colors.orange),
+                    title: const Text('Encouragement'),
+                    subtitle: const Text('"Allez tu gères !"'),
+                    onTap: () => inject(InteractionType.encouragement, content: 'Allez tu gères !'),
+                  ),
+                  ListTile(
+                    leading: const Text('🔥', style: TextStyle(fontSize: 22)),
+                    title: const Text('Emoji'),
+                    subtitle: const Text('"🔥"'),
+                    onTap: () => inject(InteractionType.emoji, content: '🔥'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.chat_bubble, color: Colors.blue),
+                    title: const Text('Message direct'),
+                    subtitle: const Text('"T\'es incroyable continue !"'),
+                    onTap: () => inject(InteractionType.directMessage, content: "T'es incroyable continue !"),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.volume_up, color: Colors.green),
+                    title: const Text('Soundboard — Commandante'),
+                    subtitle: const Text('Joue le clip audio local'),
+                    onTap: () => inject(InteractionType.soundboard, content: 'commandante'),
+                  ),
+                  ListTile(
+                    leading: const Icon(Icons.mic, color: Colors.purple),
+                    title: const Text('Message vocal (notification)'),
+                    subtitle: const Text('Son de notif + overlay vocal'),
+                    onTap: () => inject(InteractionType.voiceMessage),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Future<void> _handlePopCallback(RunStatus status) async {
     if (status == RunStatus.running || status == RunStatus.paused) {
       final confirmed = await _showStopDialog();
@@ -221,8 +358,22 @@ class _RunTrackingPageState extends ConsumerState<RunTrackingPage> {
   Future<void> _handleStop() async {
     final confirmed = await _showStopDialog();
     if (!confirmed || !mounted) return;
+
+    final elapsedBeforeStop = ref.read(runTrackingProvider).elapsedSeconds;
     final activityId = await ref.read(runTrackingProvider.notifier).stopRun();
     if (!mounted) return;
+
+    if (activityId == null && elapsedBeforeStop < 60) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Course trop courte (moins d\'1 min) — non enregistrée.'),
+          duration: Duration(seconds: 3),
+        ),
+      );
+      context.go(Routes.home);
+      return;
+    }
+
     context.go(Routes.runReward, extra: {'activityId': activityId});
   }
 

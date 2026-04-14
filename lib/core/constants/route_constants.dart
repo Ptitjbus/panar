@@ -10,4 +10,5 @@ class Routes {
   static const String runReward = '/run/reward';
   static const String runStats = '/run/stats';
   static const String runImport = '/run/import';
+  static const String friendLiveRun = '/friend/live-run';
 }

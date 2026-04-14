@@ -8,6 +8,8 @@ import 'package:live_activities/live_activities.dart';
 
 import '../../../../core/errors/failures.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../live_interactions/presentation/providers/live_interactions_provider.dart';
+import '../../../live_interactions/presentation/providers/run_session_provider.dart';
 import '../../data/datasources/petons_datasource.dart';
 import '../../data/repositories/run_repository_impl.dart';
 import '../../data/services/background_tracking_service.dart';
@@ -26,6 +28,7 @@ class RunTrackingState {
   final String? errorMessage;
   final int petonEarned;
   final int? newPetonsBalance;
+  final String? liveSessionId;
 
   const RunTrackingState({
     this.status = RunStatus.idle,
@@ -37,6 +40,7 @@ class RunTrackingState {
     this.errorMessage,
     this.petonEarned = 0,
     this.newPetonsBalance,
+    this.liveSessionId,
   });
 
   RunTrackingState copyWith({
@@ -49,6 +53,7 @@ class RunTrackingState {
     String? errorMessage,
     int? petonEarned,
     int? newPetonsBalance,
+    String? liveSessionId,
   }) {
     return RunTrackingState(
       status: status ?? this.status,
@@ -61,6 +66,7 @@ class RunTrackingState {
       errorMessage: errorMessage,
       petonEarned: petonEarned ?? this.petonEarned,
       newPetonsBalance: newPetonsBalance ?? this.newPetonsBalance,
+      liveSessionId: liveSessionId ?? this.liveSessionId,
     );
   }
 
@@ -103,6 +109,7 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
   DateTime? _startTime;
   int _pointSequence = 0;
   DateTime? _lastLiveActivityUpdate;
+  DateTime? _lastSessionUpdate;
 
   RunTrackingNotifier(this._ref) : super(const RunTrackingState());
 
@@ -129,6 +136,7 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
     _startLocationStream();
     BackgroundTrackingService.start();
     unawaited(_startLiveActivity());
+    unawaited(_startLiveSession());
   }
 
   void pauseRun() {
@@ -155,13 +163,21 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
     _elapsedTimer?.cancel();
     _elapsedTimer = null;
 
+    BackgroundTrackingService.stop();
+    unawaited(_endLiveActivity());
+    unawaited(_endLiveSession());
+
+    // Activité trop courte — on nettoie mais on ne sauvegarde pas
+    if (state.elapsedSeconds < 60) {
+      state = state.copyWith(status: RunStatus.completed);
+      return null;
+    }
+
     final endedAt = DateTime.now();
     final startedAt = _startTime ?? endedAt;
     final petons = RunTrackingState.computePetons(state.distanceMeters);
 
     state = state.copyWith(status: RunStatus.completed, petonEarned: petons);
-    BackgroundTrackingService.stop();
-    unawaited(_endLiveActivity());
 
     final userAsync = _ref.read(authStateProvider);
     final userId = userAsync.value?.id;
@@ -308,6 +324,9 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
       points: [...state.points, newPoint],
     );
 
+    // Mise à jour session live (throttle 10s)
+    _updateLiveSession();
+
     // Mise à jour de la notification Android background
     BackgroundTrackingService.update(
       distance: (newDistance / 1000).toStringAsFixed(2),
@@ -365,6 +384,43 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
       await _liveActivities.endActivity(id);
     } catch (_) {}
     _liveActivityId = null;
+  }
+
+  Future<void> _startLiveSession() async {
+    try {
+      final sessionId = await _ref
+          .read(runSessionNotifierProvider.notifier)
+          .startSession();
+      if (sessionId != null && mounted) {
+        state = state.copyWith(liveSessionId: sessionId);
+        _ref
+            .read(incomingInteractionsProvider.notifier)
+            .startListening(sessionId);
+      }
+    } catch (_) {
+      // Non-bloquant — le live peut échouer sans bloquer la course
+    }
+  }
+
+  Future<void> _endLiveSession() async {
+    try {
+      await _ref.read(runSessionNotifierProvider.notifier).endSession();
+      _ref.read(incomingInteractionsProvider.notifier).stopListening();
+    } catch (_) {}
+  }
+
+  void _updateLiveSession() {
+    final now = DateTime.now();
+    if (_lastSessionUpdate != null &&
+        now.difference(_lastSessionUpdate!).inSeconds < 10) {
+      return;
+    }
+    _lastSessionUpdate = now;
+    _ref.read(runSessionNotifierProvider.notifier).updateSession(
+      distanceMeters: state.distanceMeters,
+      elapsedSeconds: state.elapsedSeconds,
+      currentPaceSecondsPerKm: state.currentPaceSecondsPerKm?.toDouble(),
+    );
   }
 
   Future<bool> _requestLocationPermission() async {

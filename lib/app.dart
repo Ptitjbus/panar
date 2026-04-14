@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'core/constants/app_constants.dart';
+import 'core/observers/route_observer.dart';
 import 'core/constants/route_constants.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/pages/login_page.dart';
@@ -9,6 +10,7 @@ import 'features/auth/presentation/pages/signup_page.dart';
 import 'features/auth/presentation/pages/username_setup_page.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/friends/presentation/pages/friends_page.dart';
+import 'features/live_interactions/presentation/pages/friend_live_run_page.dart';
 import 'features/run/presentation/pages/run_import_page.dart';
 import 'features/run/presentation/pages/run_launch_page.dart';
 import 'features/run/presentation/pages/run_reward_page.dart';
@@ -27,6 +29,7 @@ final routerProvider = Provider<GoRouter>((ref) {
 
   return GoRouter(
     initialLocation: Routes.home,
+    observers: [appRouteObserver],
     redirect: (context, state) {
       // Get onboarding status from SharedPreferences (synchronous)
       final hasSeenOnboarding =
@@ -143,6 +146,17 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(
         path: Routes.runImport,
         builder: (context, state) => const RunImportPage(),
+      ),
+      GoRoute(
+        path: Routes.friendLiveRun,
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>;
+          return FriendLiveRunPage(
+            sessionId: extra['sessionId'] as String,
+            runnerId: extra['runnerId'] as String,
+            runnerName: extra['runnerName'] as String,
+          );
+        },
       ),
     ],
   );
