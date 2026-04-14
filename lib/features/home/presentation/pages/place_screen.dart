@@ -1,3 +1,4 @@
+import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -105,11 +106,8 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
     });
   }
 
-  void _showUserDrawer(AvatarEntity avatar) {
+  void _showUserDrawer(AvatarEntity avatar, {String? email}) {
     if (!mounted) return;
-
-    final user = ref.read(authStateProvider).value;
-    if (user == null) return;
 
     // Invalidate activities to force refresh
     ref.invalidate(userActivitiesProvider(avatar.userId));
@@ -127,7 +125,7 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
             topRight: Radius.circular(24),
           ),
         ),
-        child: UserDrawer(avatar: avatar, email: user.email),
+        child: UserDrawer(avatar: avatar, email: email),
       ),
     );
   }
@@ -255,6 +253,9 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
     ColorScheme colorScheme,
     AvatarEntity avatar,
   ) {
+    final friendsAvatarsAsync = ref.watch(friendsAvatarsProvider);
+    final user = ref.read(authStateProvider).value;
+
     return SafeArea(
       top: false, // Allow map to extend behind AppBar
       child: InteractiveViewer(
@@ -270,10 +271,31 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
             painter: PlaceGridPainter(colorScheme: colorScheme),
             child: Stack(
               children: [
+                // Current user avatar
                 AvatarWidget(
+                  key: const ValueKey('user_avatar'),
                   avatar: avatar,
                   onPositionChanged: _onAvatarPositionChanged,
-                  onTap: () => _showUserDrawer(avatar),
+                  onTap: () => _showUserDrawer(avatar, email: user?.email),
+                ),
+                // Friends avatars (on top)
+                ...friendsAvatarsAsync.when(
+                  data: (friendsAvatars) => friendsAvatars.map((friendAvatar) {
+                    // Create a random initial position for each friend
+                    final random = math.Random(friendAvatar.id.hashCode);
+                    final initialPosition = Offset(
+                      200 + random.nextDouble() * 1600,
+                      200 + random.nextDouble() * 1600,
+                    );
+                    return AvatarWidget(
+                      key: ValueKey('friend_${friendAvatar.id}'),
+                      avatar: friendAvatar,
+                      initialPosition: initialPosition,
+                      onTap: () => _showUserDrawer(friendAvatar),
+                    );
+                  }).toList(),
+                  loading: () => [],
+                  error: (error, stack) => [],
                 ),
               ],
             ),

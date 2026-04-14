@@ -27,6 +27,26 @@ class AvatarRemoteDataSource {
     }
   }
 
+  /// Get avatars for multiple users
+  Future<List<AvatarModel>> getAvatars(List<String> userIds) async {
+    if (userIds.isEmpty) return [];
+
+    try {
+      final response = await _supabaseClient
+          .from('avatars')
+          .select()
+          .inFilter('user_id', userIds);
+
+      return (response as List)
+          .map((json) => AvatarModel.fromJson(json as Map<String, dynamic>))
+          .toList();
+    } on PostgrestException catch (e) {
+      throw DatabaseFailure(e.message);
+    } catch (e) {
+      throw DatabaseFailure('Failed to get avatars: $e');
+    }
+  }
+
   /// Create avatar for user
   Future<AvatarModel> createAvatar(String userId, String? displayName) async {
     // List of soft pastel colors

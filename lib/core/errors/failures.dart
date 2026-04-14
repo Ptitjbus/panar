@@ -37,3 +37,16 @@ class ValidationFailure extends Failure {
 class UnknownFailure extends Failure {
   const UnknownFailure(super.message);
 }
+
+/// Friend request related failures
+class DuplicateRequestFailure extends Failure {
+  const DuplicateRequestFailure(super.message);
+}
+
+class InvalidRequestFailure extends Failure {
+  const InvalidRequestFailure(super.message);
+}
+
+class PermissionDeniedFailure extends Failure {
+  const PermissionDeniedFailure(super.message);
+}

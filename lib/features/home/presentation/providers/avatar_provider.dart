@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../friends/presentation/providers/friends_provider.dart';
 import '../../../profile/presentation/providers/profile_provider.dart';
 import '../../data/repositories/avatar_repository_impl.dart';
 import '../../domain/entities/avatar_entity.dart';
@@ -35,4 +36,23 @@ final userAvatarProvider = FutureProvider<AvatarEntity?>((ref) async {
     // If creation fails, return null
     return null;
   }
+});
+
+/// Provider for friends' avatars
+final friendsAvatarsProvider = FutureProvider<List<AvatarEntity>>((ref) async {
+  final friends = ref.watch(friendsNotifierProvider.select((s) => s.friends));
+
+  final authState = await ref.watch(authStateProvider.future);
+  final currentUserId = authState?.id;
+
+  if (currentUserId == null || friends.isEmpty) {
+    return [];
+  }
+
+  final friendIds = friends
+      .map((f) => f.getOtherUserId(currentUserId))
+      .toList();
+
+  final avatarRepository = ref.watch(avatarRepositoryProvider);
+  return await avatarRepository.getAvatars(friendIds);
 });

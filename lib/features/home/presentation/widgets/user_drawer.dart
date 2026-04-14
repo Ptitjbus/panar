@@ -9,9 +9,9 @@ import '../../../../shared/widgets/animated_avatar_widget.dart';
 /// Drawer displaying user information when an avatar is clicked
 class UserDrawer extends ConsumerWidget {
   final AvatarEntity avatar;
-  final String email;
+  final String? email;
 
-  const UserDrawer({super.key, required this.avatar, required this.email});
+  const UserDrawer({super.key, required this.avatar, this.email});
 
   Color _parseColor(String colorHex) {
     try {
@@ -61,12 +61,13 @@ class UserDrawer extends ConsumerWidget {
                 ),
                 const SizedBox(height: 8),
                 // Email
-                Text(
-                  email,
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    color: colorScheme.onSurfaceVariant,
+                if (email != null)
+                  Text(
+                    email!,
+                    style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                      color: colorScheme.onSurfaceVariant,
+                    ),
                   ),
-                ),
               ],
             ),
           ),

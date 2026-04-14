@@ -21,6 +21,16 @@ class AvatarRepositoryImpl implements AvatarRepository {
   }
 
   @override
+  Future<List<AvatarEntity>> getAvatars(List<String> userIds) async {
+    try {
+      final avatarModels = await _remoteDataSource.getAvatars(userIds);
+      return avatarModels.map((model) => model.toEntity()).toList();
+    } catch (e) {
+      return [];
+    }
+  }
+
+  @override
   Future<AvatarEntity> createAvatar(String userId, String? displayName) async {
     final avatarModel = await _remoteDataSource.createAvatar(
       userId,

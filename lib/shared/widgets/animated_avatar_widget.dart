@@ -6,7 +6,9 @@ Color _darkenColor(Color color, double factor) {
   assert(factor >= 0 && factor <= 1, 'Factor must be between 0 and 1');
 
   final hsl = HSLColor.fromColor(color);
-  final darkerHsl = hsl.withLightness((hsl.lightness * (1 - factor)).clamp(0.0, 1.0));
+  final darkerHsl = hsl.withLightness(
+    (hsl.lightness * (1 - factor)).clamp(0.0, 1.0),
+  );
   return darkerHsl.toColor();
 }
 
@@ -55,9 +57,7 @@ class AnimatedAvatarWidget extends StatelessWidget {
       repeat: true,
       animate: true,
       // Enable merge paths for better performance
-      options: LottieOptions(
-        enableMergePaths: true,
-      ),
+      options: LottieOptions(enableMergePaths: true),
       // Apply color filters with black eyes/mouth and darker back leg
       delegates: colorFilter != null
           ? LottieDelegates(
@@ -71,21 +71,15 @@ class AnimatedAvatarWidget extends StatelessWidget {
                   ),
                 ),
                 // Color the body
-                ValueDelegate.colorFilter(
-                  const ['Shape Layer 1', '**'],
-                  value: ColorFilter.mode(
-                    colorFilter!,
-                    BlendMode.srcATop,
-                  ),
-                ),
+                ValueDelegate.colorFilter(const [
+                  'Shape Layer 1',
+                  '**',
+                ], value: ColorFilter.mode(colorFilter!, BlendMode.srcATop)),
                 // Color the front leg
-                ValueDelegate.colorFilter(
-                  const ['LEG front', '**'],
-                  value: ColorFilter.mode(
-                    colorFilter!,
-                    BlendMode.srcATop,
-                  ),
-                ),
+                ValueDelegate.colorFilter(const [
+                  'LEG front',
+                  '**',
+                ], value: ColorFilter.mode(colorFilter!, BlendMode.srcATop)),
                 // Color the back leg (slightly darker for depth)
                 ValueDelegate.colorFilter(
                   const ['LEG Back', '**'],

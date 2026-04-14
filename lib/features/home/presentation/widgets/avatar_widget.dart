@@ -7,12 +7,14 @@ import '../../../../shared/widgets/animated_avatar_widget.dart';
 /// Widget that displays a wandering avatar on the Place map
 class AvatarWidget extends StatefulWidget {
   final AvatarEntity avatar;
+  final Offset? initialPosition;
   final void Function(Offset position)? onPositionChanged;
   final VoidCallback? onTap;
 
   const AvatarWidget({
     super.key,
     required this.avatar,
+    this.initialPosition,
     this.onPositionChanged,
     this.onTap,
   });
@@ -32,8 +34,8 @@ class _AvatarWidgetState extends State<AvatarWidget> {
   @override
   void initState() {
     super.initState();
-    // Start at center of 2000x2000 canvas
-    _position = const Offset(1000, 1000);
+    // Use initial position or default to center of 2000x2000 canvas
+    _position = widget.initialPosition ?? const Offset(1000, 1000);
     // Notify initial position
     widget.onPositionChanged?.call(_position);
     _startRandomMovement();

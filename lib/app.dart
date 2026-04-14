@@ -8,7 +8,7 @@ import 'features/auth/presentation/pages/login_page.dart';
 import 'features/auth/presentation/pages/signup_page.dart';
 import 'features/auth/presentation/pages/username_setup_page.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
-import 'features/friends/presentation/pages/friends_modal_page.dart';
+import 'features/friends/presentation/pages/friends_page.dart';
 import 'features/run/presentation/pages/run_import_page.dart';
 import 'features/run/presentation/pages/run_launch_page.dart';
 import 'features/run/presentation/pages/run_reward_page.dart';
@@ -114,7 +114,7 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.friends,
-        builder: (context, state) => const FriendsModalPage(),
+        builder: (context, state) => const FriendsPage(),
       ),
       GoRoute(
         path: Routes.runLaunch,
