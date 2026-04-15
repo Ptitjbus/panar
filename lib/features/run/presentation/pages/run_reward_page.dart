@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/route_constants.dart';
 import '../../../../shared/widgets/custom_button.dart';
+import '../../../challenges/domain/entities/duel_entity.dart';
+import '../../../challenges/presentation/providers/duel_provider.dart';
+import '../../../challenges/presentation/providers/group_challenge_provider.dart';
 import '../providers/run_tracking_provider.dart';
 import '../widgets/run_metric_card.dart';
 import '../widgets/treasure_chest_widget.dart';
@@ -19,6 +22,38 @@ class RunRewardPage extends ConsumerStatefulWidget {
 
 class _RunRewardPageState extends ConsumerState<RunRewardPage> {
   bool _chestOpened = false;
+
+  @override
+  void initState() {
+    super.initState();
+    if (widget.activityId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _autoLinkActivity(widget.activityId!);
+      });
+    }
+  }
+
+  Future<void> _autoLinkActivity(String activityId) async {
+    // Link to active duel if any
+    final duelState = ref.read(duelNotifierProvider);
+    final activeDuel = duelState.myDuels
+        .where((d) => d.isActive || d.status == DuelStatus.accepted)
+        .firstOrNull;
+    if (activeDuel != null) {
+      await ref
+          .read(duelNotifierProvider.notifier)
+          .linkActivityToDuel(activeDuel.id, activityId);
+    }
+
+    // Add distance to active group challenges
+    final gcState = ref.read(groupChallengeNotifierProvider);
+    final distanceMeters = ref.read(runTrackingProvider).distanceMeters;
+    for (final challenge in gcState.myChallenges.where((c) => c.isActive)) {
+      await ref
+          .read(groupChallengeNotifierProvider.notifier)
+          .addRunDistance(challenge.id, distanceMeters);
+    }
+  }
 
   void _openChest() {
     if (_chestOpened) return;
