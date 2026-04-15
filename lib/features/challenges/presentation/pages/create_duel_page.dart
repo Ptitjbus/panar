@@ -14,11 +14,31 @@ class CreateDuelPage extends ConsumerStatefulWidget {
   ConsumerState<CreateDuelPage> createState() => _CreateDuelPageState();
 }
 
+// Distance options in meters: null means no target
+const _kDistanceOptions = <String, double?>{
+  'Libre': null,
+  '1 km': 1000,
+  '3 km': 3000,
+  '5 km': 5000,
+  '10 km': 10000,
+  '15 km': 15000,
+  '21 km': 21097,
+  '42 km': 42195,
+};
+
 class _CreateDuelPageState extends ConsumerState<CreateDuelPage> {
   String? _selectedFriendId;
   DuelTiming _timing = DuelTiming.live;
   int _deadlineHours = 48;
+  double? _targetDistanceMeters;
+  final _descriptionController = TextEditingController();
   bool _isSubmitting = false;
+
+  @override
+  void dispose() {
+    _descriptionController.dispose();
+    super.dispose();
+  }
 
   Future<void> _submit() async {
     if (_selectedFriendId == null) {
@@ -29,10 +49,13 @@ class _CreateDuelPageState extends ConsumerState<CreateDuelPage> {
     }
 
     setState(() => _isSubmitting = true);
+    final desc = _descriptionController.text.trim();
     final duel = await ref.read(duelNotifierProvider.notifier).createDuel(
       challengedId: _selectedFriendId!,
       timing: _timing,
       deadlineHours: _timing == DuelTiming.async ? _deadlineHours : null,
+      targetDistanceMeters: _targetDistanceMeters,
+      description: desc.isEmpty ? null : desc,
     );
     if (!mounted) return;
     setState(() => _isSubmitting = false);
@@ -112,6 +135,32 @@ class _CreateDuelPageState extends ConsumerState<CreateDuelPage> {
                 onSelectionChanged: (s) => setState(() => _deadlineHours = s.first),
               ),
             ],
+            const SizedBox(height: 24),
+            const Text('Distance cible', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<double?>(
+              value: _targetDistanceMeters,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              ),
+              items: _kDistanceOptions.entries
+                  .map((e) => DropdownMenuItem(value: e.value, child: Text(e.key)))
+                  .toList(),
+              onChanged: (v) => setState(() => _targetDistanceMeters = v),
+            ),
+            const SizedBox(height: 24),
+            const Text('Description (optionnel)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _descriptionController,
+              maxLines: 2,
+              decoration: InputDecoration(
+                hintText: 'Ex : Qui fera le plus de km ce week-end ?',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              ),
+            ),
             const SizedBox(height: 32),
             SizedBox(
               width: double.infinity,

@@ -12,6 +12,8 @@ class GroupChallengeModel extends GroupChallengeEntity {
     super.endsAt,
     required super.createdAt,
     super.participants,
+    super.targetDistanceMeters,
+    super.description,
   });
 
   factory GroupChallengeModel.fromJson(Map<String, dynamic> json) {
@@ -33,6 +35,8 @@ class GroupChallengeModel extends GroupChallengeEntity {
           .map((p) =>
               GroupChallengeParticipantModel.fromJson(p as Map<String, dynamic>))
           .toList(),
+      targetDistanceMeters: (json['target_distance_meters'] as num?)?.toDouble(),
+      description: json['description'] as String?,
     );
   }
 
@@ -46,5 +50,7 @@ class GroupChallengeModel extends GroupChallengeEntity {
         endsAt: endsAt,
         createdAt: createdAt,
         participants: participants,
+        targetDistanceMeters: targetDistanceMeters,
+        description: description,
       );
 }

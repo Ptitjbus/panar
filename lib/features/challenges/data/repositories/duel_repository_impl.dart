@@ -34,12 +34,16 @@ class DuelRepositoryImpl implements DuelRepository {
     required String challengedId,
     required DuelTiming timing,
     int? deadlineHours,
+    double? targetDistanceMeters,
+    String? description,
   }) async {
     final model = await _ds.createDuel(
       challengerId: _userId,
       challengedId: challengedId,
       timing: timing.toJson(),
       deadlineHours: deadlineHours,
+      targetDistanceMeters: targetDistanceMeters,
+      description: description,
     );
     return model.toEntity();
   }

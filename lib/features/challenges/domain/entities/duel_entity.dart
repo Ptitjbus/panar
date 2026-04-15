@@ -44,6 +44,8 @@ class DuelEntity {
   final DateTime updatedAt;
   final ProfileEntity? challengerProfile;
   final ProfileEntity? challengedProfile;
+  final double? targetDistanceMeters;
+  final String? description;
 
   const DuelEntity({
     required this.id,
@@ -59,6 +61,8 @@ class DuelEntity {
     required this.updatedAt,
     this.challengerProfile,
     this.challengedProfile,
+    this.targetDistanceMeters,
+    this.description,
   });
 
   bool get isPending   => status == DuelStatus.pending;

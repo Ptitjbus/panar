@@ -53,12 +53,16 @@ class GroupChallengeRepositoryImpl implements GroupChallengeRepository {
     required String title,
     required int durationDays,
     required List<String> friendIds,
+    double? targetDistanceMeters,
+    String? description,
   }) async {
     final model = await _ds.createChallenge(
       creatorId: _userId,
       title: title,
       durationDays: durationDays,
       friendIds: friendIds,
+      targetDistanceMeters: targetDistanceMeters,
+      description: description,
     );
     return model.toEntity();
   }

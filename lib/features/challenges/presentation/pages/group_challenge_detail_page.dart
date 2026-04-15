@@ -61,6 +61,20 @@ class GroupChallengeDetailPage extends ConsumerWidget {
                 ],
               ],
             ),
+            if (challenge.targetDistanceMeters != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Objectif : ${(challenge.targetDistanceMeters! / 1000).toStringAsFixed(0)} km',
+                style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600, color: Color(0xFFB45309)),
+              ),
+            ],
+            if (challenge.description != null && challenge.description!.isNotEmpty) ...[
+              const SizedBox(height: 6),
+              Text(
+                challenge.description!,
+                style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic),
+              ),
+            ],
 
             // Force-start button (creator only, some rejected)
             if (challenge.creatorId == currentUserId && challenge.canForceStart) ...[

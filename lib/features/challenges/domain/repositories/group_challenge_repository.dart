@@ -7,6 +7,8 @@ abstract class GroupChallengeRepository {
     required String title,
     required int durationDays,
     required List<String> friendIds,
+    double? targetDistanceMeters,
+    String? description,
   });
   Future<void> respondToChallenge(String challengeId, {required bool accept});
   Future<void> forceStart(String challengeId);

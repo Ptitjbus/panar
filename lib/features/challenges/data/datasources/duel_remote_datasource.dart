@@ -37,6 +37,8 @@ class DuelRemoteDataSource {
     required String challengedId,
     required String timing,
     int? deadlineHours,
+    double? targetDistanceMeters,
+    String? description,
   }) async {
     try {
       final response = await _client
@@ -45,7 +47,9 @@ class DuelRemoteDataSource {
             'challenger_id': challengerId,
             'challenged_id': challengedId,
             'timing': timing,
-            'deadline_hours': deadlineHours,
+            if (deadlineHours != null) 'deadline_hours': deadlineHours,
+            if (targetDistanceMeters != null) 'target_distance_meters': targetDistanceMeters,
+            if (description != null) 'description': description,
           })
           .select(_profileSelect)
           .single()

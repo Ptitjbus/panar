@@ -43,6 +43,17 @@ class DuelDetailPage extends ConsumerWidget {
             ),
             if (duel.timing == DuelTiming.async && duel.deadlineHours != null)
               Text('Délai : ${duel.deadlineHours}h', style: const TextStyle(color: Colors.grey)),
+            if (duel.targetDistanceMeters != null) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Distance cible : ${(duel.targetDistanceMeters! / 1000).toStringAsFixed(1)} km',
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w600, color: Color(0xFF6C63FF)),
+              ),
+            ],
+            if (duel.description != null && duel.description!.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(duel.description!, style: const TextStyle(color: Colors.grey, fontStyle: FontStyle.italic)),
+            ],
             const SizedBox(height: 24),
             if (duel.isPending && duel.challengedId == currentUserId) ...[
               const Text(

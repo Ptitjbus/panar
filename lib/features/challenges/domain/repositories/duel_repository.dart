@@ -7,6 +7,8 @@ abstract class DuelRepository {
     required String challengedId,
     required DuelTiming timing,
     int? deadlineHours,
+    double? targetDistanceMeters,
+    String? description,
   });
   Future<void> respondToDuel(String duelId, {required bool accept});
   Future<void> linkActivity(String duelId, String activityId, {required bool isChallenger});

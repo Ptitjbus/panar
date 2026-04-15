@@ -6,6 +6,17 @@ import '../../../friends/presentation/providers/friends_provider.dart';
 import '../providers/group_challenge_provider.dart';
 import '../widgets/friend_selector_widget.dart';
 
+const _kDistanceOptions = <String, double?>{
+  'Libre': null,
+  '5 km': 5000,
+  '10 km': 10000,
+  '21 km': 21097,
+  '42 km': 42195,
+  '50 km': 50000,
+  '100 km': 100000,
+  '200 km': 200000,
+};
+
 class CreateGroupChallengePage extends ConsumerStatefulWidget {
   const CreateGroupChallengePage({super.key});
 
@@ -16,13 +27,34 @@ class CreateGroupChallengePage extends ConsumerStatefulWidget {
 
 class _CreateGroupChallengePageState extends ConsumerState<CreateGroupChallengePage> {
   final _titleController = TextEditingController();
+  final _descriptionController = TextEditingController();
   int _durationDays = 7;
+  double? _targetDistanceMeters;
   List<String> _selectedFriendIds = [];
   bool _isSubmitting = false;
+  bool _templateApplied = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (!_templateApplied) {
+      _templateApplied = true;
+      final extra = GoRouterState.of(context).extra as Map<String, dynamic>?;
+      if (extra != null) {
+        _titleController.text = extra['title'] as String? ?? '';
+        _durationDays = extra['duration_days'] as int? ?? 7;
+        _targetDistanceMeters = extra['target_distance_meters'] as double?;
+        if (extra['description'] != null) {
+          _descriptionController.text = extra['description'] as String;
+        }
+      }
+    }
+  }
 
   @override
   void dispose() {
     _titleController.dispose();
+    _descriptionController.dispose();
     super.dispose();
   }
 
@@ -42,12 +74,15 @@ class _CreateGroupChallengePageState extends ConsumerState<CreateGroupChallengeP
     }
 
     setState(() => _isSubmitting = true);
+    final desc = _descriptionController.text.trim();
     final challenge = await ref
         .read(groupChallengeNotifierProvider.notifier)
         .createChallenge(
           title: title,
           durationDays: _durationDays,
           friendIds: _selectedFriendIds,
+          targetDistanceMeters: _targetDistanceMeters,
+          description: desc.isEmpty ? null : desc,
         );
     if (!mounted) return;
     setState(() => _isSubmitting = false);
@@ -98,6 +133,32 @@ class _CreateGroupChallengePageState extends ConsumerState<CreateGroupChallengeP
               ],
               selected: {_durationDays},
               onSelectionChanged: (s) => setState(() => _durationDays = s.first),
+            ),
+            const SizedBox(height: 20),
+            const Text('Distance cible', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            const SizedBox(height: 8),
+            DropdownButtonFormField<double?>(
+              value: _targetDistanceMeters,
+              decoration: InputDecoration(
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              ),
+              items: _kDistanceOptions.entries
+                  .map((e) => DropdownMenuItem(value: e.value, child: Text(e.key)))
+                  .toList(),
+              onChanged: (v) => setState(() => _targetDistanceMeters = v),
+            ),
+            const SizedBox(height: 20),
+            const Text('Description (optionnel)', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
+            const SizedBox(height: 8),
+            TextField(
+              controller: _descriptionController,
+              maxLines: 2,
+              decoration: InputDecoration(
+                hintText: 'Ex : Qui accumule le plus de km en avril ?',
+                border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
+                contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              ),
             ),
             const SizedBox(height: 20),
             Row(

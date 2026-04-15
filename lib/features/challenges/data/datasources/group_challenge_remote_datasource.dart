@@ -71,6 +71,8 @@ class GroupChallengeRemoteDataSource {
     required String title,
     required int durationDays,
     required List<String> friendIds,
+    double? targetDistanceMeters,
+    String? description,
   }) async {
     try {
       final gcRow = await _client
@@ -79,6 +81,8 @@ class GroupChallengeRemoteDataSource {
             'creator_id': creatorId,
             'title': title,
             'duration_days': durationDays,
+            if (targetDistanceMeters != null) 'target_distance_meters': targetDistanceMeters,
+            if (description != null) 'description': description,
           })
           .select('id')
           .single()

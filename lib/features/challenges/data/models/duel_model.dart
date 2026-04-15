@@ -16,6 +16,8 @@ class DuelModel extends DuelEntity {
     required super.updatedAt,
     super.challengerProfile,
     super.challengedProfile,
+    super.targetDistanceMeters,
+    super.description,
   });
 
   factory DuelModel.fromJson(Map<String, dynamic> json) {
@@ -37,6 +39,8 @@ class DuelModel extends DuelEntity {
       challengedProfile: json['challenged'] != null
           ? ProfileModel.fromJson(json['challenged'] as Map<String, dynamic>).toEntity()
           : null,
+      targetDistanceMeters: (json['target_distance_meters'] as num?)?.toDouble(),
+      description: json['description'] as String?,
     );
   }
 
@@ -52,6 +56,8 @@ class DuelModel extends DuelEntity {
     if (winnerId != null) 'winner_id': winnerId,
     'created_at': createdAt.toIso8601String(),
     'updated_at': updatedAt.toIso8601String(),
+    if (targetDistanceMeters != null) 'target_distance_meters': targetDistanceMeters,
+    if (description != null) 'description': description,
   };
 
   DuelEntity toEntity() => DuelEntity(
@@ -68,5 +74,7 @@ class DuelModel extends DuelEntity {
     updatedAt: updatedAt,
     challengerProfile: challengerProfile,
     challengedProfile: challengedProfile,
+    targetDistanceMeters: targetDistanceMeters,
+    description: description,
   );
 }

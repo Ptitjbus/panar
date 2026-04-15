@@ -66,6 +66,8 @@ class GroupChallengeNotifier extends StateNotifier<GroupChallengeState> {
     required String title,
     required int durationDays,
     required List<String> friendIds,
+    double? targetDistanceMeters,
+    String? description,
   }) async {
     try {
       final repo = _ref.read(groupChallengeRepositoryProvider);
@@ -73,6 +75,8 @@ class GroupChallengeNotifier extends StateNotifier<GroupChallengeState> {
         title: title,
         durationDays: durationDays,
         friendIds: friendIds,
+        targetDistanceMeters: targetDistanceMeters,
+        description: description,
       );
       state = state.copyWith(successMessage: 'Défi créé !');
       await loadChallenges();

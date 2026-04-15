@@ -66,6 +66,8 @@ class DuelNotifier extends StateNotifier<DuelState> {
     required String challengedId,
     required DuelTiming timing,
     int? deadlineHours,
+    double? targetDistanceMeters,
+    String? description,
   }) async {
     try {
       final repo = _ref.read(duelRepositoryProvider);
@@ -73,6 +75,8 @@ class DuelNotifier extends StateNotifier<DuelState> {
         challengedId: challengedId,
         timing: timing,
         deadlineHours: deadlineHours,
+        targetDistanceMeters: targetDistanceMeters,
+        description: description,
       );
       state = state.copyWith(successMessage: 'Défi envoyé !');
       await loadDuels();

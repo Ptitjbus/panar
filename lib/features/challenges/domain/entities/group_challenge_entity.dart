@@ -26,6 +26,8 @@ class GroupChallengeEntity {
   final DateTime? endsAt;
   final DateTime createdAt;
   final List<GroupChallengeParticipantEntity> participants;
+  final double? targetDistanceMeters;
+  final String? description;
 
   const GroupChallengeEntity({
     required this.id,
@@ -37,6 +39,8 @@ class GroupChallengeEntity {
     this.endsAt,
     required this.createdAt,
     this.participants = const [],
+    this.targetDistanceMeters,
+    this.description,
   });
 
   bool get isPending   => status == GroupChallengeStatus.pending;
