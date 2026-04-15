@@ -1,4 +1,7 @@
 {
+  "context": {
+    "fileName": ["CLAUDE.md", "GEMINI.md"]
+  },
   "mcpServers": {
     "dart": {
       "command": "dart",

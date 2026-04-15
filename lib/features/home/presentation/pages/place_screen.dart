@@ -5,6 +5,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/route_constants.dart';
 import '../../../activities/presentation/providers/activity_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../live_interactions/presentation/providers/run_session_provider.dart';
 import '../providers/avatar_provider.dart';
 import '../../domain/entities/avatar_entity.dart';
 import '../widgets/avatar_widget.dart';
@@ -254,7 +255,10 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
     AvatarEntity avatar,
   ) {
     final friendsAvatarsAsync = ref.watch(friendsAvatarsProvider);
+    final activeSessionsAsync = ref.watch(activeFriendSessionsProvider);
     final user = ref.read(authStateProvider).value;
+
+    final activeFriendIds = activeSessionsAsync.valueOrNull?.map((s) => s.userId).toSet() ?? {};
 
     return SafeArea(
       top: false, // Allow map to extend behind AppBar
@@ -281,16 +285,22 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
                 // Friends avatars (on top)
                 ...friendsAvatarsAsync.when(
                   data: (friendsAvatars) => friendsAvatars.map((friendAvatar) {
-                    // Create a random initial position for each friend
+                    // Create a random initial position for each friend closely around the center
                     final random = math.Random(friendAvatar.id.hashCode);
+                    final distance = 60 + random.nextDouble() * 100; // max 160 px distance
+                    final angle = random.nextDouble() * 2 * math.pi;
                     final initialPosition = Offset(
-                      200 + random.nextDouble() * 1600,
-                      200 + random.nextDouble() * 1600,
+                      1000 + math.cos(angle) * distance,
+                      1000 + math.sin(angle) * distance,
                     );
+                    
+                    final isRunning = activeFriendIds.contains(friendAvatar.userId);
+
                     return AvatarWidget(
                       key: ValueKey('friend_${friendAvatar.id}'),
                       avatar: friendAvatar,
                       initialPosition: initialPosition,
+                      isRunning: isRunning,
                       onTap: () => _showUserDrawer(friendAvatar),
                     );
                   }).toList(),

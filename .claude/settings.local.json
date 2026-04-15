@@ -23,7 +23,13 @@
       "Bash(ls -la /Users/killianelattar/Workspace/Panar-Flutter/lib/features/*/)",
       "Bash(git log:*)",
       "mcp__supabase__list_storage_buckets",
-      "mcp__supabase__execute_sql"
+      "mcp__supabase__execute_sql",
+      "Bash(/Users/killianelattar/.claude/plugins/cache/claude-plugins-official/superpowers/5.0.7/skills/brainstorming/scripts/start-server.sh --project-dir /Users/killianelattar/Workspace/Panar-Flutter)",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git commit *)",
+      "Bash(flutter devices *)",
+      "mcp__supabase__get_logs"
     ]
   },
   "enabledMcpjsonServers": [

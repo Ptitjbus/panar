@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import '../../../../core/constants/route_constants.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/entities/duel_entity.dart';
 import '../providers/duel_provider.dart';
@@ -82,6 +84,27 @@ class DuelDetailPage extends ConsumerWidget {
                     ),
                   ),
                 ],
+              ),
+            ],
+            if (duel.status == DuelStatus.accepted || duel.status == DuelStatus.active) ...[
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                height: 54,
+                child: FilledButton.icon(
+                  onPressed: () {
+                    context.push(Routes.runTracking);
+                  },
+                  icon: const Icon(Icons.play_arrow_rounded, size: 28),
+                  label: const Text(
+                    'Démarrer le duel en direct',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                  ),
+                  style: FilledButton.styleFrom(
+                    backgroundColor: const Color(0xFF6C63FF),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  ),
+                ),
               ),
             ],
             if (duel.isCompleted) ...[
