@@ -10,6 +10,12 @@ import 'features/auth/presentation/pages/signup_page.dart';
 import 'features/auth/presentation/pages/username_setup_page.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/friends/presentation/pages/friends_page.dart';
+import 'features/challenges/presentation/pages/create_duel_page.dart';
+import 'features/challenges/presentation/pages/create_group_challenge_page.dart';
+import 'features/challenges/presentation/pages/duel_detail_page.dart';
+import 'features/challenges/presentation/pages/duels_page.dart';
+import 'features/challenges/presentation/pages/group_challenge_detail_page.dart';
+import 'features/challenges/presentation/pages/group_challenges_page.dart';
 import 'features/live_interactions/presentation/pages/friend_live_run_page.dart';
 import 'features/run/presentation/pages/run_import_page.dart';
 import 'features/run/presentation/pages/run_launch_page.dart';
@@ -156,6 +162,36 @@ final routerProvider = Provider<GoRouter>((ref) {
             runnerId: extra['runnerId'] as String,
             runnerName: extra['runnerName'] as String,
           );
+        },
+      ),
+      GoRoute(
+        path: Routes.duels,
+        builder: (context, state) => const DuelsPage(),
+      ),
+      GoRoute(
+        path: Routes.createDuel,
+        builder: (context, state) => const CreateDuelPage(),
+      ),
+      GoRoute(
+        path: Routes.duelDetail,
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return DuelDetailPage(duelId: id);
+        },
+      ),
+      GoRoute(
+        path: Routes.groupChallenges,
+        builder: (context, state) => const GroupChallengesPage(),
+      ),
+      GoRoute(
+        path: Routes.createGroupChallenge,
+        builder: (context, state) => const CreateGroupChallengePage(),
+      ),
+      GoRoute(
+        path: Routes.groupChallengeDetail,
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return GroupChallengeDetailPage(challengeId: id);
         },
       ),
     ],
