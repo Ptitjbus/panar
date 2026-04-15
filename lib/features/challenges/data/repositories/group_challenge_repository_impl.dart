@@ -13,6 +13,7 @@ class GroupChallengeRepositoryImpl implements GroupChallengeRepository {
 
   @override
   Future<List<GroupChallengeEntity>> getMyChallenges() async {
+    if (_userId.isEmpty) return [];
     final created = await _ds.getChallenges(_userId);
     final participating = await _ds.getChallengesForParticipant(_userId);
 
@@ -35,6 +36,7 @@ class GroupChallengeRepositoryImpl implements GroupChallengeRepository {
 
   @override
   Future<List<GroupChallengeEntity>> getPendingInvites() async {
+    if (_userId.isEmpty) return [];
     final participating = await _ds.getChallengesForParticipant(_userId);
     return participating
         .where((c) {

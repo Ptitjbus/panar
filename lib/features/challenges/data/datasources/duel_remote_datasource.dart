@@ -107,6 +107,22 @@ class DuelRemoteDataSource {
     }
   }
 
+  Future<double> getActivityDistance(String activityId) async {
+    try {
+      final row = await _client
+          .from('activities')
+          .select('distance_meters')
+          .eq('id', activityId)
+          .single()
+          .timeout(const Duration(seconds: 10));
+      return (row['distance_meters'] as num).toDouble();
+    } on PostgrestException catch (e) {
+      throw DatabaseFailure(e.message);
+    } catch (e) {
+      throw DatabaseFailure('Failed to get activity distance: $e');
+    }
+  }
+
   Future<void> resolveWinner(String duelId, String winnerId) async {
     try {
       await _client

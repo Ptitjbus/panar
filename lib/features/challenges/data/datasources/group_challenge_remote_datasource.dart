@@ -95,6 +95,11 @@ class GroupChallengeRemoteDataSource {
           )
           .timeout(const Duration(seconds: 10));
 
+      await _client
+          .from('group_challenge_participants')
+          .insert({'challenge_id': challengeId, 'user_id': creatorId, 'status': 'accepted', 'joined_at': DateTime.now().toIso8601String()})
+          .timeout(const Duration(seconds: 10));
+
       return getChallenge(challengeId);
     } on PostgrestException catch (e) {
       throw DatabaseFailure(e.message);
@@ -168,20 +173,11 @@ class GroupChallengeRemoteDataSource {
     double additionalMeters,
   ) async {
     try {
-      final row = await _client
-          .from('group_challenge_participants')
-          .select('total_distance_meters')
-          .eq('challenge_id', challengeId)
-          .eq('user_id', userId)
-          .single()
-          .timeout(const Duration(seconds: 10));
-      final current = (row['total_distance_meters'] as num).toDouble();
-      await _client
-          .from('group_challenge_participants')
-          .update({'total_distance_meters': current + additionalMeters})
-          .eq('challenge_id', challengeId)
-          .eq('user_id', userId)
-          .timeout(const Duration(seconds: 10));
+      await _client.rpc('increment_participant_distance', params: {
+        'p_challenge_id': challengeId,
+        'p_user_id': userId,
+        'p_additional_meters': additionalMeters,
+      }).timeout(const Duration(seconds: 10));
     } on PostgrestException catch (e) {
       throw DatabaseFailure(e.message);
     } catch (e) {

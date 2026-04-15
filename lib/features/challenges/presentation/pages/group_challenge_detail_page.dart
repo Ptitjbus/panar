@@ -12,7 +12,7 @@ class GroupChallengeDetailPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(groupChallengeNotifierProvider);
     final currentUserId = ref.watch(authStateProvider).value?.id ?? '';
-    final challenge = state.myChallenges
+    final challenge = [...state.myChallenges, ...state.pendingInvites]
         .where((c) => c.id == challengeId)
         .firstOrNull;
 

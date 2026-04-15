@@ -11,6 +11,7 @@ class DuelRepositoryImpl implements DuelRepository {
 
   @override
   Future<List<DuelEntity>> getMyDuels() async {
+    if (_userId.isEmpty) return [];
     final models = await _ds.getDuels(_userId);
     return models
         .where((d) => d.status != DuelStatus.pending || d.challengerId == _userId)
@@ -20,6 +21,7 @@ class DuelRepositoryImpl implements DuelRepository {
 
   @override
   Future<List<DuelEntity>> getPendingInvites() async {
+    if (_userId.isEmpty) return [];
     final models = await _ds.getDuels(_userId);
     return models
         .where((d) => d.status == DuelStatus.pending && d.challengedId == _userId)
@@ -60,9 +62,13 @@ class DuelRepositoryImpl implements DuelRepository {
   Future<void> resolveWinner(String duelId) async {
     final duel = await _ds.getDuel(duelId);
     if (duel.challengerActivityId == null || duel.challengedActivityId == null) return;
-    // Winner is determined by comparing activity distances at the datasource level.
-    // For now we mark completed without setting winner — the detail page will display both.
-    await _ds.updateDuelStatus(duelId, 'completed');
+
+    // Fetch both activity distances
+    final challengerDist = await _ds.getActivityDistance(duel.challengerActivityId!);
+    final challengedDist = await _ds.getActivityDistance(duel.challengedActivityId!);
+
+    final winnerId = challengerDist >= challengedDist ? duel.challengerId : duel.challengedId;
+    await _ds.resolveWinner(duelId, winnerId);
   }
 }
 
