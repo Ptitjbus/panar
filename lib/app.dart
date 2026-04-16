@@ -26,6 +26,8 @@ import 'features/onboarding/presentation/pages/onboarding_page.dart';
 import 'features/profile/presentation/providers/profile_provider.dart';
 import 'shared/layouts/main_layout.dart';
 import 'shared/providers/shared_preferences_provider.dart';
+import 'features/notifications/notification_setup_service.dart';
+import 'features/notifications/notification_handler.dart';
 
 /// Router provider
 final routerProvider = Provider<GoRouter>((ref) {
@@ -204,6 +206,16 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+
+    // Initialiser les notifications dès que l'utilisateur se connecte
+    ref.listen(authStateProvider, (previous, next) {
+      final wasLoggedIn = previous?.valueOrNull != null;
+      final isLoggedIn = next.valueOrNull != null;
+      if (!wasLoggedIn && isLoggedIn) {
+        NotificationSetupService.initialize();
+        NotificationHandler.initialize(ref);
+      }
+    });
 
     return MaterialApp.router(
       title: 'Panar',

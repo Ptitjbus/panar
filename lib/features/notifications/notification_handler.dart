@@ -8,7 +8,7 @@ import '../../core/constants/route_constants.dart';
 class NotificationHandler {
   NotificationHandler._();
 
-  static void initialize(Ref ref) {
+  static void initialize(WidgetRef ref) {
     // App en arrière-plan → tap sur la notif
     FirebaseMessaging.onMessageOpenedApp.listen((message) {
       _route(ref, message.data.cast<String, String>());
@@ -22,7 +22,7 @@ class NotificationHandler {
     });
   }
 
-  static void _route(Ref ref, Map<String, String> data) {
+  static void _route(WidgetRef ref, Map<String, String> data) {
     final router = ref.read(routerProvider);
     final type = data['type'];
 
