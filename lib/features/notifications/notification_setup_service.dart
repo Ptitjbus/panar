@@ -1,42 +1,36 @@
+import 'dart:async';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
-
-const _kPermissionDeniedKey = 'notification_permission_denied';
 
 /// Initialise Firebase Messaging, demande la permission iOS, enregistre le token
 /// dans device_tokens, et configure l'affichage foreground.
 class NotificationSetupService {
+  static StreamSubscription<String>? _tokenRefreshSub;
+  static StreamSubscription<RemoteMessage>? _messageSub;
   static final _localNotifications = FlutterLocalNotificationsPlugin();
+  static int _notifId = 0;
 
   static Future<void> initialize() async {
     await _initLocalNotifications();
 
-    final prefs = await SharedPreferences.getInstance();
-    final alreadyDenied = prefs.getBool(_kPermissionDeniedKey) ?? false;
+    final settings = await FirebaseMessaging.instance.requestPermission(
+      alert: true,
+      badge: true,
+      sound: true,
+    );
 
-    if (!alreadyDenied) {
-      final settings = await FirebaseMessaging.instance.requestPermission(
-        alert: true,
-        badge: true,
-        sound: true,
-      );
-      if (settings.authorizationStatus == AuthorizationStatus.denied) {
-        await prefs.setBool(_kPermissionDeniedKey, true);
-        return;
-      }
-    } else {
-      return;
-    }
+    const authorized = {AuthorizationStatus.authorized, AuthorizationStatus.provisional};
+    if (!authorized.contains(settings.authorizationStatus)) return;
 
     await _registerToken();
 
-    FirebaseMessaging.instance.onTokenRefresh.listen(_upsertToken);
-
-    // Afficher les notifications en foreground
-    FirebaseMessaging.onMessage.listen(_showForegroundNotification);
+    _tokenRefreshSub?.cancel();
+    _messageSub?.cancel();
+    _tokenRefreshSub = FirebaseMessaging.instance.onTokenRefresh.listen(_upsertToken);
+    _messageSub = FirebaseMessaging.onMessage.listen(_showForegroundNotification);
   }
 
   static Future<void> _initLocalNotifications() async {
@@ -60,7 +54,7 @@ class NotificationSetupService {
     if (userId == null) return;
     try {
       await Supabase.instance.client.from('device_tokens').upsert(
-        {'user_id': userId, 'fcm_token': token, 'platform': 'ios', 'updated_at': DateTime.now().toIso8601String()},
+        {'user_id': userId, 'fcm_token': token, 'platform': 'ios'},
         onConflict: 'user_id,fcm_token',
       );
       debugPrint('[Notifications] Token enregistré');
@@ -82,7 +76,7 @@ class NotificationSetupService {
     );
 
     await _localNotifications.show(
-      notification.hashCode,
+      _notifId++,
       notification.title,
       notification.body,
       notifDetails,
