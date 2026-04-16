@@ -1,9 +1,11 @@
 import 'dart:async';
+import 'dart:io';
 
 import 'package:audioplayers/audioplayers.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:path_provider/path_provider.dart';
 import '../../../../shared/providers/supabase_provider.dart';
 import '../../data/datasources/run_interaction_remote_datasource.dart';
 import '../../data/repositories/run_interaction_repository_impl.dart';
@@ -54,8 +56,17 @@ class IncomingInteractionsNotifier
     if (interaction.type == InteractionType.soundboard &&
         interaction.content != null) {
       _playAsset('sounds/${interaction.content!}.mp3');
+    } else if (interaction.type == InteractionType.voiceMessage &&
+        interaction.audioUrl != null) {
+      // Short notification beep then auto-play the voice message
+      _playAsset('sounds/notification.mp3');
+      Future.delayed(
+        const Duration(milliseconds: 600),
+        () => playAudio(interaction.audioUrl!),
+      );
     } else {
-      _playAsset('sounds/commandante.mp3');
+      // Short notification beep for encouragements, emojis, direct messages
+      _playAsset('sounds/notification.mp3');
     }
   }
 
@@ -80,14 +91,32 @@ class IncomingInteractionsNotifier
     }
   }
 
+  /// Downloads [url] to a temp file then plays it via DeviceFileSource.
+  /// This is more reliable than UrlSource on iOS with the ambient audio session.
   Future<void> playAudio(String url) async {
-    final p = AudioPlayer();
+    File? tmpFile;
     try {
-      p.onPlayerComplete.listen((_) => p.dispose());
-      await p.play(UrlSource(url));
+      final httpClient = HttpClient();
+      final request = await httpClient.getUrl(Uri.parse(url));
+      final response = await request.close();
+      final bytes = await consolidateHttpClientResponseBytes(response);
+      httpClient.close();
+
+      final dir = await getTemporaryDirectory();
+      tmpFile = File(
+        '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a',
+      );
+      await tmpFile.writeAsBytes(bytes);
+
+      final p = AudioPlayer();
+      p.onPlayerComplete.listen((_) {
+        p.dispose();
+        tmpFile?.delete().catchError((e) => tmpFile!);
+      });
+      await p.play(DeviceFileSource(tmpFile.path));
     } catch (e) {
       debugPrint('[Audio] playAudio error: $e');
-      await p.dispose();
+      tmpFile?.delete().catchError((e) => tmpFile!);
     }
   }
 

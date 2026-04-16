@@ -29,7 +29,15 @@
       "Bash(git commit -m ' *)",
       "Bash(git commit *)",
       "Bash(flutter devices *)",
-      "mcp__supabase__get_logs"
+      "mcp__supabase__get_logs",
+      "Bash(grep -E \"\\\\.\\(png|jpg|svg\\)$\")",
+      "Bash(xcode-select -p)",
+      "Bash(ffmpeg -version)",
+      "Bash(ffmpeg -y -f lavfi -i \"sine=frequency=880:duration=0.08,sine=frequency=1100:duration=0.08\" -filter_complex \"[0][1]concat=n=2:v=0:a=1,afade=t=out:st=0.12:d=0.04\" /Users/killianelattar/Workspace/Panar-Flutter/assets/sounds/notification.mp3)",
+      "Bash(ffmpeg -y -f lavfi -i \"sine=frequency=880:duration=0.15\" -af \"afade=t=out:st=0.1:d=0.05\" /Users/killianelattar/Workspace/Panar-Flutter/assets/sounds/notification.mp3)",
+      "Bash(git -C /Users/killianelattar/Workspace/Panar-Flutter status)",
+      "Bash(git -C /Users/killianelattar/Workspace/Panar-Flutter commit --allow-empty -m ' *)",
+      "mcp__dart__pub"
     ]
   },
   "enabledMcpjsonServers": [

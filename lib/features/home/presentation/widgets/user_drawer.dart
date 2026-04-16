@@ -10,8 +10,15 @@ import '../../../../shared/widgets/animated_avatar_widget.dart';
 class UserDrawer extends ConsumerWidget {
   final AvatarEntity avatar;
   final String? email;
+  /// Called when the user taps "Voir en direct" (only provided when the friend is running)
+  final VoidCallback? onViewLive;
 
-  const UserDrawer({super.key, required this.avatar, this.email});
+  const UserDrawer({
+    super.key,
+    required this.avatar,
+    this.email,
+    this.onViewLive,
+  });
 
   Color _parseColor(String colorHex) {
     try {
@@ -68,6 +75,18 @@ class UserDrawer extends ConsumerWidget {
                       color: colorScheme.onSurfaceVariant,
                     ),
                   ),
+                // "Voir en direct" button when the friend is currently running
+                if (onViewLive != null) ...[
+                  const SizedBox(height: 16),
+                  FilledButton.icon(
+                    onPressed: onViewLive,
+                    icon: const Icon(Icons.directions_run, size: 18),
+                    label: const Text('Voir en direct'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.redAccent,
+                    ),
+                  ),
+                ],
               ],
             ),
           ),

@@ -58,6 +58,22 @@ class AnimatedAvatarWidget extends StatelessWidget {
       animate: true,
       // Enable merge paths for better performance
       options: LottieOptions(enableMergePaths: true),
+      // Fallback when the Lottie file fails to load (e.g. on simulator)
+      errorBuilder: (context, error, stackTrace) {
+        return Container(
+          width: size,
+          height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: colorFilter ?? const Color(0xFF4ECDC4),
+          ),
+          child: Icon(
+            Icons.person,
+            size: size * 0.55,
+            color: Colors.white,
+          ),
+        );
+      },
       // Apply color filters with black eyes/mouth and darker back leg
       delegates: colorFilter != null
           ? LottieDelegates(

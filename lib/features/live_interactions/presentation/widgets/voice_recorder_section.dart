@@ -67,9 +67,10 @@ class _VoiceRecorderSectionState extends State<VoiceRecorderSection> {
         bytes,
         fileOptions: const FileOptions(contentType: 'audio/m4a'),
       );
-      final url = client.storage
+      // Use a signed URL (1 hour) so it works regardless of bucket visibility
+      final url = await client.storage
           .from('run-interactions')
-          .getPublicUrl(fileName);
+          .createSignedUrl(fileName, 3600);
       widget.onSend(url);
     } catch (_) {
       if (mounted) {

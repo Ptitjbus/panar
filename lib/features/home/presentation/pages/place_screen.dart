@@ -5,9 +5,11 @@ import 'package:go_router/go_router.dart';
 import '../../../../core/constants/route_constants.dart';
 import '../../../activities/presentation/providers/activity_provider.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../friends/presentation/providers/friends_provider.dart';
 import '../../../live_interactions/presentation/providers/run_session_provider.dart';
 import '../providers/avatar_provider.dart';
 import '../../domain/entities/avatar_entity.dart';
+import '../../../live_interactions/domain/entities/run_session_entity.dart';
 import '../widgets/avatar_widget.dart';
 import '../widgets/place_grid.dart';
 import '../widgets/user_drawer.dart';
@@ -55,6 +57,9 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
     _currentAvatarPosition = position;
   }
 
+  // Default zoom applied on first load — 1.0 = full canvas visible, 2.0 = 2× closer
+  static const double _initialZoom = 1.8;
+
   void _centerCameraOnAvatar({bool animate = true}) {
     if (!mounted) return;
 
@@ -64,17 +69,22 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
     final currentMatrix = _transformationController.value;
     final currentScale = currentMatrix.getMaxScaleOnAxis();
 
+    // On the very first (non-animated) call the scale is still the default 1.0.
+    // Use a closer zoom so avatars are not too small.
+    final targetScale =
+        (!animate && currentScale == 1.0) ? _initialZoom : currentScale;
+
     // Calculate the translation to center the avatar at current position
     final translateX =
-        screenSize.width / 2 - _currentAvatarPosition.dx * currentScale;
+        screenSize.width / 2 - _currentAvatarPosition.dx * targetScale;
     final translateY =
-        screenSize.height / 2 - _currentAvatarPosition.dy * currentScale;
+        screenSize.height / 2 - _currentAvatarPosition.dy * targetScale;
 
     // Create target transformation matrix with preserved scale
     final targetMatrix = Matrix4.identity()
-      ..setEntry(0, 0, currentScale) // Scale X
-      ..setEntry(1, 1, currentScale) // Scale Y
-      ..setEntry(2, 2, currentScale); // Scale Z
+      ..setEntry(0, 0, targetScale) // Scale X
+      ..setEntry(1, 1, targetScale) // Scale Y
+      ..setEntry(2, 2, targetScale); // Scale Z
     targetMatrix.setTranslationRaw(translateX, translateY, 0);
 
     // Apply transformation directly or with animation
@@ -107,26 +117,50 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
     });
   }
 
-  void _showUserDrawer(AvatarEntity avatar, {String? email}) {
+  void _showUserDrawer(
+    AvatarEntity avatar, {
+    String? email,
+    String? runnerName,
+    RunSessionEntity? session,
+  }) {
     if (!mounted) return;
 
     // Invalidate activities to force refresh
     ref.invalidate(userActivitiesProvider(avatar.userId));
 
+    // Capture context-dependent values before entering the builder
+    final outerContext = context;
+
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        height: MediaQuery.of(context).size.height,
+      builder: (modalContext) => Container(
+        height: MediaQuery.of(modalContext).size.height,
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: Theme.of(modalContext).colorScheme.surface,
           borderRadius: const BorderRadius.only(
             topLeft: Radius.circular(24),
             topRight: Radius.circular(24),
           ),
         ),
-        child: UserDrawer(avatar: avatar, email: email),
+        child: UserDrawer(
+          avatar: avatar,
+          email: email,
+          onViewLive: session != null
+              ? () {
+                  Navigator.of(modalContext).pop();
+                  outerContext.push(
+                    Routes.friendLiveRun,
+                    extra: {
+                      'sessionId': session.id,
+                      'runnerId': avatar.userId,
+                      'runnerName': runnerName ?? avatar.displayName ?? '',
+                    },
+                  );
+                }
+              : null,
+        ),
       ),
     );
   }
@@ -257,8 +291,21 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
     final friendsAvatarsAsync = ref.watch(friendsAvatarsProvider);
     final activeSessionsAsync = ref.watch(activeFriendSessionsProvider);
     final user = ref.read(authStateProvider).value;
+    final currentUserId = user?.id ?? '';
 
-    final activeFriendIds = activeSessionsAsync.valueOrNull?.map((s) => s.userId).toSet() ?? {};
+    // Build username map from profiles (always up-to-date, unlike avatar.displayName)
+    final friendsState = ref.watch(friendsNotifierProvider);
+    final friendUsernameById = <String, String>{
+      for (final f in friendsState.friends)
+        f.getOtherUserId(currentUserId):
+            f.getOtherUserProfile(currentUserId)?.username ?? '',
+    };
+
+    final activeSessions = activeSessionsAsync.valueOrNull ?? [];
+    final activeFriendIds = activeSessions.map((s) => s.userId).toSet();
+    final activeSessionsByUserId = {
+      for (final s in activeSessions) s.userId: s,
+    };
 
     return SafeArea(
       top: false, // Allow map to extend behind AppBar
@@ -301,7 +348,13 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
                       avatar: friendAvatar,
                       initialPosition: initialPosition,
                       isRunning: isRunning,
-                      onTap: () => _showUserDrawer(friendAvatar),
+                      onTap: () => _showUserDrawer(
+                        friendAvatar,
+                        runnerName: friendUsernameById[friendAvatar.userId] ??
+                            friendAvatar.displayName ??
+                            '',
+                        session: activeSessionsByUserId[friendAvatar.userId],
+                      ),
                     );
                   }).toList(),
                   loading: () => [],

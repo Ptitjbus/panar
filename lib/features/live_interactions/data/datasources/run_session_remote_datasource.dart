@@ -58,10 +58,14 @@ class RunSessionRemoteDatasource {
 
   Future<List<RunSessionModel>> getActiveFriendSessions() async {
     try {
+      // Only fetch sessions updated within the last 4 hours to filter orphaned sessions
+      final staleThreshold =
+          DateTime.now().subtract(const Duration(hours: 4)).toIso8601String();
       final response = await _client
           .from('run_sessions')
           .select()
           .eq('status', 'active')
+          .gte('updated_at', staleThreshold)
           .order('started_at', ascending: false);
       return (response as List)
           .map((e) => RunSessionModel.fromJson(e as Map<String, dynamic>))

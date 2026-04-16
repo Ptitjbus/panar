@@ -6,14 +6,29 @@ import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/entities/duel_entity.dart';
 import '../providers/duel_provider.dart';
 
-class DuelDetailPage extends ConsumerWidget {
+class DuelDetailPage extends ConsumerStatefulWidget {
   final String duelId;
   const DuelDetailPage({super.key, required this.duelId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<DuelDetailPage> createState() => _DuelDetailPageState();
+}
+
+class _DuelDetailPageState extends ConsumerState<DuelDetailPage> {
+  @override
+  void initState() {
+    super.initState();
+    // Refresh duel state when the page opens so both users see up-to-date status
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.read(duelNotifierProvider.notifier).loadDuels();
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(duelNotifierProvider);
     final currentUserId = ref.watch(authStateProvider).value?.id ?? '';
+    final duelId = widget.duelId;
 
     final duel = [
       ...state.myDuels,

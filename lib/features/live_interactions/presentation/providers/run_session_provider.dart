@@ -21,12 +21,21 @@ final runSessionRepositoryProvider = Provider<RunSessionRepository>((ref) {
   return RunSessionRepositoryImpl(datasource);
 });
 
-// --- Active friend sessions ---
+// --- Active friend sessions (refreshes every 10 s to stay in sync) ---
 
 final activeFriendSessionsProvider =
-    FutureProvider<List<RunSessionEntity>>((ref) async {
+    StreamProvider<List<RunSessionEntity>>((ref) async* {
       final repo = ref.read(runSessionRepositoryProvider);
-      return repo.getActiveFriendSessions();
+      // Emit immediately
+      yield await repo.getActiveFriendSessions();
+      // Then re-fetch every 10 seconds
+      await for (final _ in Stream.periodic(const Duration(seconds: 10))) {
+        try {
+          yield await repo.getActiveFriendSessions();
+        } catch (_) {
+          // Non-blocking — keep the last known value on error
+        }
+      }
     });
 
 // --- Watch a specific session (for the viewer screen) ---
