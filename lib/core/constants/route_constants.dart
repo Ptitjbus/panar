@@ -14,6 +14,7 @@ class Routes {
   static const String duels = '/challenges/duels';
   static const String createDuel = '/challenges/duels/create';
   static const String duelDetail = '/challenges/duels/:id';
+  static const String duelWaitingRoom = '/challenges/duels/:id/waiting';
   static const String groupChallenges = '/challenges/group';
   static const String createGroupChallenge = '/challenges/group/create';
   static const String groupChallengeDetail = '/challenges/group/:id';
