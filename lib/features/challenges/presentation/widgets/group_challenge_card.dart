@@ -1,5 +1,7 @@
+// lib/features/challenges/presentation/widgets/group_challenge_card.dart
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/route_constants.dart';
 import '../../domain/entities/group_challenge_entity.dart';
 import '../../domain/entities/group_challenge_participant_entity.dart';
@@ -23,91 +25,77 @@ class GroupChallengeCard extends StatelessWidget {
         .firstOrNull;
     final isInvited = myParticipation?.status == ParticipantStatus.invited;
 
-    return Card(
+    final (chipLabel, chipBg, chipFg) = _chipStyle(isInvited);
+
+    return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(14),
-        side: BorderSide(
-          color: isInvited
-              ? const Color(0xFF6C63FF)
-              : challenge.isActive
-                  ? const Color(0xFFF59E0B)
-                  : Colors.grey.shade300,
-          width: isInvited || challenge.isActive ? 2 : 1,
-        ),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: AppColors.border),
       ),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(16),
         onTap: isInvited
             ? null
             : () => context.push(
                 Routes.groupChallengeDetail.replaceFirst(':id', challenge.id),
               ),
         child: Padding(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.all(16),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Row(
                 children: [
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          isInvited
-                              ? 'Invitation reçue'
-                              : challenge.isActive
-                                  ? '${challenge.daysRemaining}j restants'
-                                  : challenge.isCompleted
-                                      ? 'Terminé'
-                                      : 'En attente',
-                          style: TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.w700,
-                            color: isInvited
-                                ? const Color(0xFF6C63FF)
-                                : challenge.isActive
-                                    ? const Color(0xFFF59E0B)
-                                    : Colors.grey,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          challenge.title,
-                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                        ),
-                        Text(
-                          '${challenge.participants.length} participant${challenge.participants.length > 1 ? 's' : ''} · ${challenge.durationDays}j',
-                          style: const TextStyle(fontSize: 12, color: Colors.grey),
-                        ),
-                      ],
-                    ),
-                  ),
-                  if (!isInvited) const Icon(Icons.chevron_right, color: Colors.grey),
+                  _StatusChip(label: chipLabel, bg: chipBg, fg: chipFg),
+                  const Spacer(),
+                  if (!isInvited)
+                    const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 20),
                 ],
               ),
+              const SizedBox(height: 8),
+              Text(
+                challenge.title,
+                style: const TextStyle(
+                  fontWeight: FontWeight.w700,
+                  fontSize: 16,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                '${challenge.participants.length} participant${challenge.participants.length > 1 ? 's' : ''} · ${challenge.durationDays}j',
+                style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
+              ),
               if (challenge.isActive) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 ...challenge.sortedLeaderboard.take(3).toList().asMap().entries.map((e) {
                   final medals = ['🥇', '🥈', '🥉'];
                   final p = e.value;
+                  final isMe = p.userId == currentUserId;
                   return Padding(
                     padding: const EdgeInsets.symmetric(vertical: 2),
                     child: Row(
                       children: [
-                        Text(medals[e.key], style: const TextStyle(fontSize: 14)),
+                        Text(medals[e.key], style: const TextStyle(fontSize: 13)),
                         const SizedBox(width: 6),
-                        Text(
-                          '@${p.profile?.username ?? p.userId.substring(0, 6)}',
-                          style: const TextStyle(fontSize: 13),
+                        Expanded(
+                          child: Text(
+                            '@${p.profile?.username ?? p.userId.substring(0, 6)}',
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: isMe ? FontWeight.w600 : FontWeight.normal,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
                         ),
-                        const Spacer(),
                         Text(
                           p.formattedDistance,
                           style: TextStyle(
-                            fontWeight: p.userId == currentUserId ? FontWeight.bold : FontWeight.normal,
                             fontSize: 13,
+                            fontWeight: isMe ? FontWeight.w700 : FontWeight.normal,
+                            color: isMe ? AppColors.accent : AppColors.textSecondary,
                           ),
                         ),
                       ],
@@ -116,16 +104,16 @@ class GroupChallengeCard extends StatelessWidget {
                 }),
               ],
               if (isInvited && onRespond != null) ...[
-                const SizedBox(height: 10),
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
                       child: FilledButton(
                         onPressed: () => onRespond!(true),
                         style: FilledButton.styleFrom(
-                          backgroundColor: Colors.green,
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          backgroundColor: AppColors.success,
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                         child: const Text('Accepter', style: TextStyle(fontSize: 13)),
                       ),
@@ -135,10 +123,11 @@ class GroupChallengeCard extends StatelessWidget {
                       child: OutlinedButton(
                         onPressed: () => onRespond!(false),
                         style: OutlinedButton.styleFrom(
-                          padding: const EdgeInsets.symmetric(vertical: 8),
-                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                          side: const BorderSide(color: AppColors.border),
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
-                        child: const Text('Refuser', style: TextStyle(fontSize: 13)),
+                        child: const Text('Refuser', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
                       ),
                     ),
                   ],
@@ -148,6 +137,31 @@ class GroupChallengeCard extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+
+  (String, Color, Color) _chipStyle(bool isInvited) {
+    if (isInvited) return ('Invitation', AppColors.chipAccentBg, AppColors.accent);
+    if (challenge.isActive) {
+      return ('${challenge.daysRemaining}j restants', AppColors.chipAccentBg, AppColors.accent);
+    }
+    if (challenge.isCompleted) return ('Terminé', AppColors.chipNeutralBg, AppColors.textSecondary);
+    return ('En attente', AppColors.chipNeutralBg, AppColors.textSecondary);
+  }
+}
+
+class _StatusChip extends StatelessWidget {
+  final String label;
+  final Color bg;
+  final Color fg;
+  const _StatusChip({required this.label, required this.bg, required this.fg});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
+      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: fg)),
     );
   }
 }
