@@ -3,12 +3,14 @@ import '../../../profile/domain/entities/profile_entity.dart';
 enum ParticipantStatus {
   invited,
   accepted,
-  rejected;
+  rejected,
+  left;
 
   static ParticipantStatus fromString(String s) {
     switch (s) {
       case 'accepted': return ParticipantStatus.accepted;
       case 'rejected': return ParticipantStatus.rejected;
+      case 'left':     return ParticipantStatus.left;
       default:         return ParticipantStatus.invited;
     }
   }
