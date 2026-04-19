@@ -1,3 +1,4 @@
+// lib/features/challenges/data/models/duel_model.dart
 import '../../../profile/data/models/profile_model.dart';
 import '../../domain/entities/duel_entity.dart';
 
@@ -12,6 +13,7 @@ class DuelModel extends DuelEntity {
     super.challengerActivityId,
     super.challengedActivityId,
     super.winnerId,
+    super.cancelledById,
     required super.createdAt,
     required super.updatedAt,
     super.challengerProfile,
@@ -31,6 +33,7 @@ class DuelModel extends DuelEntity {
       challengerActivityId: json['challenger_activity_id'] as String?,
       challengedActivityId: json['challenged_activity_id'] as String?,
       winnerId: json['winner_id'] as String?,
+      cancelledById: json['cancelled_by_id'] as String?,
       createdAt: DateTime.parse(json['created_at'] as String),
       updatedAt: DateTime.parse(json['updated_at'] as String),
       challengerProfile: json['challenger'] != null
@@ -54,6 +57,7 @@ class DuelModel extends DuelEntity {
     if (challengerActivityId != null) 'challenger_activity_id': challengerActivityId,
     if (challengedActivityId != null) 'challenged_activity_id': challengedActivityId,
     if (winnerId != null) 'winner_id': winnerId,
+    if (cancelledById != null) 'cancelled_by_id': cancelledById,
     'created_at': createdAt.toIso8601String(),
     'updated_at': updatedAt.toIso8601String(),
     if (targetDistanceMeters != null) 'target_distance_meters': targetDistanceMeters,
@@ -70,6 +74,7 @@ class DuelModel extends DuelEntity {
     challengerActivityId: challengerActivityId,
     challengedActivityId: challengedActivityId,
     winnerId: winnerId,
+    cancelledById: cancelledById,
     createdAt: createdAt,
     updatedAt: updatedAt,
     challengerProfile: challengerProfile,
