@@ -188,6 +188,35 @@ class GroupChallengeRemoteDataSource {
       throw DatabaseFailure('Failed to increment distance: $e');
     }
   }
+
+  Future<void> deleteChallenge(String challengeId) async {
+    try {
+      await _client
+          .from('group_challenges')
+          .delete()
+          .eq('id', challengeId)
+          .timeout(const Duration(seconds: 10));
+    } on PostgrestException catch (e) {
+      throw DatabaseFailure(e.message);
+    } catch (e) {
+      throw DatabaseFailure('Failed to delete challenge: $e');
+    }
+  }
+
+  Future<void> leaveChallenge(String challengeId, String userId) async {
+    try {
+      await _client
+          .from('group_challenge_participants')
+          .update({'status': 'left'})
+          .eq('challenge_id', challengeId)
+          .eq('user_id', userId)
+          .timeout(const Duration(seconds: 10));
+    } on PostgrestException catch (e) {
+      throw DatabaseFailure(e.message);
+    } catch (e) {
+      throw DatabaseFailure('Failed to leave challenge: $e');
+    }
+  }
 }
 
 final groupChallengeRemoteDataSourceProvider =
