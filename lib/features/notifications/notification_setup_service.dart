@@ -22,15 +22,23 @@ class NotificationSetupService {
       sound: true,
     );
 
-    const authorized = {AuthorizationStatus.authorized, AuthorizationStatus.provisional};
+    debugPrint('[Notifications] Auth status: ${settings.authorizationStatus}');
+    const authorized = {
+      AuthorizationStatus.authorized,
+      AuthorizationStatus.provisional,
+    };
     if (!authorized.contains(settings.authorizationStatus)) return;
 
     await _registerToken();
 
     _tokenRefreshSub?.cancel();
     _messageSub?.cancel();
-    _tokenRefreshSub = FirebaseMessaging.instance.onTokenRefresh.listen(_upsertToken);
-    _messageSub = FirebaseMessaging.onMessage.listen(_showForegroundNotification);
+    _tokenRefreshSub = FirebaseMessaging.instance.onTokenRefresh.listen(
+      _upsertToken,
+    );
+    _messageSub = FirebaseMessaging.onMessage.listen(
+      _showForegroundNotification,
+    );
   }
 
   static Future<void> _initLocalNotifications() async {
@@ -45,18 +53,40 @@ class NotificationSetupService {
   }
 
   static Future<void> _registerToken() async {
-    final token = await FirebaseMessaging.instance.getToken();
-    if (token != null) await _upsertToken(token);
+    try {
+      if (defaultTargetPlatform == TargetPlatform.iOS) {
+        // Il faut parfois attendre que l'OS fournisse le token APNs
+        String? apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+        if (apnsToken == null) {
+          await Future<void>.delayed(const Duration(seconds: 8));
+          apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+        }
+        if (apnsToken == null) {
+          debugPrint('[Notifications] APNS token toujours null après attente — abandon.');
+          return;
+        }
+        debugPrint('[Notifications] APNS token OK: $apnsToken');
+      }
+
+      final token = await FirebaseMessaging.instance.getToken();
+      if (token != null) {
+        debugPrint('[Notifications] FCM TOKEN: $token'); // ← ajoute ça
+        await _upsertToken(token);
+      }
+    } catch (e) {
+      debugPrint('[Notifications] Erreur register token: $e');
+    }
   }
 
   static Future<void> _upsertToken(String token) async {
     final userId = Supabase.instance.client.auth.currentUser?.id;
     if (userId == null) return;
     try {
-      await Supabase.instance.client.from('device_tokens').upsert(
-        {'user_id': userId, 'fcm_token': token, 'platform': 'ios'},
-        onConflict: 'user_id,fcm_token',
-      );
+      await Supabase.instance.client.from('device_tokens').upsert({
+        'user_id': userId,
+        'fcm_token': token,
+        'platform': 'ios',
+      }, onConflict: 'user_id,fcm_token');
       debugPrint('[Notifications] Token enregistré');
     } catch (e) {
       debugPrint('[Notifications] Erreur upsert token: $e');

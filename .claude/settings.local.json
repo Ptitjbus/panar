@@ -37,7 +37,12 @@
       "Bash(ffmpeg -y -f lavfi -i \"sine=frequency=880:duration=0.15\" -af \"afade=t=out:st=0.1:d=0.05\" /Users/killianelattar/Workspace/Panar-Flutter/assets/sounds/notification.mp3)",
       "Bash(git -C /Users/killianelattar/Workspace/Panar-Flutter status)",
       "Bash(git -C /Users/killianelattar/Workspace/Panar-Flutter commit --allow-empty -m ' *)",
-      "mcp__dart__pub"
+      "mcp__dart__pub",
+      "mcp__dart__list_devices",
+      "mcp__dart__launch_app",
+      "Bash(flutter doctor *)",
+      "Bash(flutter run *)",
+      "Bash(kill %1)"
     ]
   },
   "enabledMcpjsonServers": [

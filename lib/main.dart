@@ -14,6 +14,9 @@ import 'shared/providers/shared_preferences_provider.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
+
   // Initialize Firebase
   await Firebase.initializeApp(
     options: DefaultFirebaseOptions.currentPlatform,
@@ -35,9 +38,6 @@ Future<void> main() async {
       ),
     ),
   );
-
-  // Load environment variables
-  await dotenv.load(fileName: ".env");
 
   // Initialize Supabase
   await Supabase.initialize(
