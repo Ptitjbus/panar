@@ -5,15 +5,17 @@ enum DuelStatus {
   accepted,
   rejected,
   active,
-  completed;
+  completed,
+  cancelled;
 
   static DuelStatus fromString(String s) {
     switch (s) {
-      case 'accepted': return DuelStatus.accepted;
-      case 'rejected': return DuelStatus.rejected;
-      case 'active':   return DuelStatus.active;
+      case 'accepted':  return DuelStatus.accepted;
+      case 'rejected':  return DuelStatus.rejected;
+      case 'active':    return DuelStatus.active;
       case 'completed': return DuelStatus.completed;
-      default:         return DuelStatus.pending;
+      case 'cancelled': return DuelStatus.cancelled;
+      default:          return DuelStatus.pending;
     }
   }
 
@@ -40,6 +42,7 @@ class DuelEntity {
   final String? challengerActivityId;
   final String? challengedActivityId;
   final String? winnerId;
+  final String? cancelledById;
   final DateTime createdAt;
   final DateTime updatedAt;
   final ProfileEntity? challengerProfile;
@@ -57,6 +60,7 @@ class DuelEntity {
     this.challengerActivityId,
     this.challengedActivityId,
     this.winnerId,
+    this.cancelledById,
     required this.createdAt,
     required this.updatedAt,
     this.challengerProfile,
@@ -68,6 +72,7 @@ class DuelEntity {
   bool get isPending   => status == DuelStatus.pending;
   bool get isActive    => status == DuelStatus.active;
   bool get isCompleted => status == DuelStatus.completed;
+  bool get isCancelled => status == DuelStatus.cancelled;
 
   ProfileEntity? getOtherProfile(String currentUserId) =>
       currentUserId == challengerId ? challengedProfile : challengerProfile;
