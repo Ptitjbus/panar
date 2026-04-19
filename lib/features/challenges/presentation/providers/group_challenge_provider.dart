@@ -133,6 +133,38 @@ class GroupChallengeNotifier extends StateNotifier<GroupChallengeState> {
     }
   }
 
+  Future<bool> deleteChallenge(String challengeId) async {
+    try {
+      final repo = _ref.read(groupChallengeRepositoryProvider);
+      await repo.deleteChallenge(challengeId);
+      state = state.copyWith(successMessage: 'Défi supprimé');
+      await loadChallenges();
+      return true;
+    } on DatabaseFailure catch (e) {
+      state = state.copyWith(errorMessage: e.message);
+      return false;
+    } catch (e) {
+      state = state.copyWith(errorMessage: 'Erreur lors de la suppression');
+      return false;
+    }
+  }
+
+  Future<bool> leaveChallenge(String challengeId) async {
+    try {
+      final repo = _ref.read(groupChallengeRepositoryProvider);
+      await repo.leaveChallenge(challengeId);
+      state = state.copyWith(successMessage: 'Défi quitté');
+      await loadChallenges();
+      return true;
+    } on DatabaseFailure catch (e) {
+      state = state.copyWith(errorMessage: e.message);
+      return false;
+    } catch (e) {
+      state = state.copyWith(errorMessage: 'Erreur lors du retrait');
+      return false;
+    }
+  }
+
   void clearMessages() => state = state.copyWith();
 }
 
