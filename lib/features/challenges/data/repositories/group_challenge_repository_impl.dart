@@ -109,6 +109,16 @@ class GroupChallengeRepositoryImpl implements GroupChallengeRepository {
       await _ds.activateChallenge(challengeId, challenge.durationDays);
     }
   }
+
+  @override
+  Future<void> deleteChallenge(String challengeId) async {
+    await _ds.deleteChallenge(challengeId);
+  }
+
+  @override
+  Future<void> leaveChallenge(String challengeId) async {
+    await _ds.leaveChallenge(challengeId, _userId);
+  }
 }
 
 final groupChallengeRepositoryProvider = Provider<GroupChallengeRepository>((ref) {
