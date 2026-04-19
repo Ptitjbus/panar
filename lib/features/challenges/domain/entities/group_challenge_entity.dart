@@ -47,10 +47,32 @@ class GroupChallengeEntity {
   bool get isActive    => status == GroupChallengeStatus.active;
   bool get isCompleted => status == GroupChallengeStatus.completed;
 
+  List<GroupChallengeParticipantEntity> get activeParticipants =>
+      participants.where((p) => p.status == ParticipantStatus.accepted).toList();
+
+  double get teamDistanceMeters => activeParticipants
+      .fold(0.0, (sum, p) => sum + p.totalDistanceMeters);
+
+  double get teamProgressRatio {
+    final target = targetDistanceMeters;
+    if (target == null || target <= 0) return 0;
+    final ratio = teamDistanceMeters / target;
+    if (ratio < 0) return 0;
+    if (ratio > 1) return 1;
+    return ratio;
+  }
+
+  String get teamDistanceLabel =>
+      '${(teamDistanceMeters / 1000).toStringAsFixed(1)} km';
+
+  String get targetDistanceLabel {
+    final target = targetDistanceMeters;
+    if (target == null) return 'Libre';
+    return '${(target / 1000).toStringAsFixed(1)} km';
+  }
+
   List<GroupChallengeParticipantEntity> get sortedLeaderboard {
-    final accepted = participants
-        .where((p) => p.status == ParticipantStatus.accepted)
-        .toList()
+    final accepted = activeParticipants
       ..sort((a, b) => b.totalDistanceMeters.compareTo(a.totalDistanceMeters));
     return accepted;
   }

@@ -82,6 +82,39 @@ class AvatarRemoteDataSource {
       throw DatabaseFailure('Failed to create avatar: $e');
     }
   }
+
+  /// Update avatar customizations for user
+  Future<AvatarModel> updateAvatar({
+    required String userId,
+    String? displayName,
+    String? colorHex,
+  }) async {
+    try {
+      final updates = <String, dynamic>{
+        'updated_at': DateTime.now().toIso8601String(),
+      };
+
+      if (displayName != null) {
+        updates['display_name'] = displayName.trim().isEmpty ? null : displayName.trim();
+      }
+      if (colorHex != null) {
+        updates['color_hex'] = colorHex;
+      }
+
+      final response = await _supabaseClient
+          .from('avatars')
+          .update(updates)
+          .eq('user_id', userId)
+          .select()
+          .single();
+
+      return AvatarModel.fromJson(response);
+    } on PostgrestException catch (e) {
+      throw DatabaseFailure(e.message);
+    } catch (e) {
+      throw DatabaseFailure('Failed to update avatar: $e');
+    }
+  }
 }
 
 /// Provider for AvatarRemoteDataSource

@@ -13,6 +13,7 @@ import 'features/friends/presentation/pages/friends_page.dart';
 import 'features/challenges/presentation/pages/create_duel_page.dart';
 import 'features/challenges/presentation/pages/create_group_challenge_page.dart';
 import 'features/challenges/presentation/pages/duel_detail_page.dart';
+import 'features/challenges/presentation/pages/duel_waiting_room_page.dart';
 import 'features/challenges/presentation/pages/duels_page.dart';
 import 'features/challenges/presentation/pages/group_challenge_detail_page.dart';
 import 'features/challenges/presentation/pages/group_challenges_page.dart';
@@ -179,6 +180,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           return DuelDetailPage(duelId: id);
+        },
+      ),
+      GoRoute(
+        path: Routes.duelWaitingRoom,
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return DuelWaitingRoomPage(duelId: id);
         },
       ),
       GoRoute(

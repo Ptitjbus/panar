@@ -28,8 +28,6 @@ const _kDistanceOptions = <String, double?>{
 
 class _CreateDuelPageState extends ConsumerState<CreateDuelPage> {
   String? _selectedFriendId;
-  DuelTiming _timing = DuelTiming.live;
-  int _deadlineHours = 48;
   double? _targetDistanceMeters;
   final _descriptionController = TextEditingController();
   bool _isSubmitting = false;
@@ -52,8 +50,8 @@ class _CreateDuelPageState extends ConsumerState<CreateDuelPage> {
     final desc = _descriptionController.text.trim();
     final duel = await ref.read(duelNotifierProvider.notifier).createDuel(
       challengedId: _selectedFriendId!,
-      timing: _timing,
-      deadlineHours: _timing == DuelTiming.async ? _deadlineHours : null,
+      timing: DuelTiming.live,
+      deadlineHours: null,
       targetDistanceMeters: _targetDistanceMeters,
       description: desc.isEmpty ? null : desc,
     );
@@ -98,48 +96,31 @@ class _CreateDuelPageState extends ConsumerState<CreateDuelPage> {
             const SizedBox(height: 24),
             const Text('Type de duel', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             const SizedBox(height: 10),
-            Row(
-              children: [
-                Expanded(
-                  child: _TimingOption(
-                    emoji: '⚡',
-                    label: 'Maintenant',
-                    sublabel: 'Live',
-                    selected: _timing == DuelTiming.live,
-                    onTap: () => setState(() => _timing = DuelTiming.live),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: _TimingOption(
-                    emoji: '🕐',
-                    label: 'Quand tu veux',
-                    sublabel: 'Différé',
-                    selected: _timing == DuelTiming.async,
-                    onTap: () => setState(() => _timing = DuelTiming.async),
-                  ),
-                ),
-              ],
-            ),
-            if (_timing == DuelTiming.async) ...[
-              const SizedBox(height: 20),
-              const Text('Délai pour répondre', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
-              const SizedBox(height: 8),
-              SegmentedButton<int>(
-                segments: const [
-                  ButtonSegment(value: 24, label: Text('24h')),
-                  ButtonSegment(value: 48, label: Text('48h')),
-                  ButtonSegment(value: 72, label: Text('72h')),
-                ],
-                selected: {_deadlineHours},
-                onSelectionChanged: (s) => setState(() => _deadlineHours = s.first),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(14),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF5F3FF),
+                border: Border.all(color: const Color(0xFF6C63FF), width: 2),
+                borderRadius: BorderRadius.circular(12),
               ),
-            ],
+              child: const Column(
+                children: [
+                  Text('⚡', style: TextStyle(fontSize: 22)),
+                  SizedBox(height: 6),
+                  Text(
+                    'Maintenant',
+                    style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF6C63FF)),
+                  ),
+                  Text('Live', style: TextStyle(fontSize: 11, color: Colors.grey)),
+                ],
+              ),
+            ),
             const SizedBox(height: 24),
             const Text('Distance cible', style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15)),
             const SizedBox(height: 8),
             DropdownButtonFormField<double?>(
-              value: _targetDistanceMeters,
+              initialValue: _targetDistanceMeters,
               decoration: InputDecoration(
                 border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
                 contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
@@ -179,48 +160,6 @@ class _CreateDuelPageState extends ConsumerState<CreateDuelPage> {
                     : const Text('Envoyer l\'invitation ⚔️', style: TextStyle(fontSize: 16)),
               ),
             ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-class _TimingOption extends StatelessWidget {
-  final String emoji;
-  final String label;
-  final String sublabel;
-  final bool selected;
-  final VoidCallback onTap;
-
-  const _TimingOption({
-    required this.emoji,
-    required this.label,
-    required this.sublabel,
-    required this.selected,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: selected ? const Color(0xFFF5F3FF) : const Color(0xFFF9FAFB),
-          border: Border.all(
-            color: selected ? const Color(0xFF6C63FF) : const Color(0xFFE5E7EB),
-            width: selected ? 2 : 1,
-          ),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Column(
-          children: [
-            Text(emoji, style: const TextStyle(fontSize: 22)),
-            const SizedBox(height: 6),
-            Text(label, style: TextStyle(fontWeight: FontWeight.bold, color: selected ? const Color(0xFF6C63FF) : Colors.black87)),
-            Text(sublabel, style: const TextStyle(fontSize: 11, color: Colors.grey)),
           ],
         ),
       ),

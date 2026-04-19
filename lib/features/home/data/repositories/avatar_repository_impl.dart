@@ -38,6 +38,20 @@ class AvatarRepositoryImpl implements AvatarRepository {
     );
     return avatarModel.toEntity();
   }
+
+  @override
+  Future<AvatarEntity> updateAvatar({
+    required String userId,
+    String? displayName,
+    String? colorHex,
+  }) async {
+    final avatarModel = await _remoteDataSource.updateAvatar(
+      userId: userId,
+      displayName: displayName,
+      colorHex: colorHex,
+    );
+    return avatarModel.toEntity();
+  }
 }
 
 /// Provider for AvatarRepository

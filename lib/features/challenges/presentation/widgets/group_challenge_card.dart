@@ -68,40 +68,35 @@ class GroupChallengeCard extends StatelessWidget {
                 '${challenge.participants.length} participant${challenge.participants.length > 1 ? 's' : ''} · ${challenge.durationDays}j',
                 style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
               ),
-              if (challenge.isActive) ...[
+              if (challenge.targetDistanceMeters != null) ...[
                 const SizedBox(height: 12),
-                ...challenge.sortedLeaderboard.take(3).toList().asMap().entries.map((e) {
-                  final medals = ['🥇', '🥈', '🥉'];
-                  final p = e.value;
-                  final isMe = p.userId == currentUserId;
-                  return Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 2),
-                    child: Row(
-                      children: [
-                        Text(medals[e.key], style: const TextStyle(fontSize: 13)),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            '@${p.profile?.username ?? p.userId.substring(0, 6)}',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: isMe ? FontWeight.w600 : FontWeight.normal,
-                              color: AppColors.textPrimary,
-                            ),
-                          ),
-                        ),
-                        Text(
-                          p.formattedDistance,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: isMe ? FontWeight.w700 : FontWeight.normal,
-                            color: isMe ? AppColors.accent : AppColors.textSecondary,
-                          ),
-                        ),
-                      ],
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text(
+                      'Progression équipe',
+                      style: TextStyle(fontSize: 12, color: AppColors.textSecondary),
                     ),
-                  );
-                }),
+                    Text(
+                      '${challenge.teamDistanceLabel} / ${challenge.targetDistanceLabel}',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textPrimary,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(999),
+                  child: LinearProgressIndicator(
+                    minHeight: 8,
+                    value: challenge.teamProgressRatio,
+                    backgroundColor: AppColors.chipNeutralBg,
+                    valueColor: const AlwaysStoppedAnimation<Color>(AppColors.accent),
+                  ),
+                ),
               ],
               if (isInvited && onRespond != null) ...[
                 const SizedBox(height: 12),

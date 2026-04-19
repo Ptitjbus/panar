@@ -15,13 +15,16 @@ class DuelReadyStateEntity {
   bool get isReady => readyAt != null;
 
   factory DuelReadyStateEntity.fromJson(Map<String, dynamic> json) {
+    final rawReadyAt = json['ready_at'];
     return DuelReadyStateEntity(
       id: json['id'] as String,
       duelId: json['duel_id'] as String,
       userId: json['user_id'] as String,
-      readyAt: json['ready_at'] != null
-          ? DateTime.parse(json['ready_at'] as String)
-          : null,
+      readyAt: rawReadyAt == null
+          ? null
+          : rawReadyAt is DateTime
+              ? rawReadyAt
+              : DateTime.parse(rawReadyAt.toString()),
     );
   }
 }

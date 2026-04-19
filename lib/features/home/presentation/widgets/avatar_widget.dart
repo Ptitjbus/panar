@@ -1,7 +1,6 @@
-import 'dart:async';
-import 'dart:math';
 import 'package:flutter/material.dart';
 import '../../domain/entities/avatar_entity.dart';
+import '../../domain/entities/avatar_mood.dart';
 import '../../../../shared/widgets/animated_avatar_widget.dart';
 
 /// Widget that displays a wandering avatar on the Place map
@@ -11,6 +10,7 @@ class AvatarWidget extends StatefulWidget {
   final void Function(Offset position)? onPositionChanged;
   final VoidCallback? onTap;
   final bool isRunning;
+  final AvatarMood mood;
 
   const AvatarWidget({
     super.key,
@@ -19,6 +19,7 @@ class AvatarWidget extends StatefulWidget {
     this.onPositionChanged,
     this.onTap,
     this.isRunning = false,
+    this.mood = AvatarMood.neutral,
   });
 
   @override
@@ -66,6 +67,28 @@ class _AvatarWidgetState extends State<AvatarWidget> {
               size: 40,
               colorFilter: color,
               showShadow: true,
+            ),
+            Positioned(
+              top: -10,
+              left: -10,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(999),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 4,
+                      offset: Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  widget.mood.emoji,
+                  style: const TextStyle(fontSize: 12),
+                ),
+              ),
             ),
             if (widget.isRunning)
               Positioned(

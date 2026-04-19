@@ -9,6 +9,7 @@ import '../../../friends/presentation/providers/friends_provider.dart';
 import '../../../live_interactions/presentation/providers/run_session_provider.dart';
 import '../providers/avatar_provider.dart';
 import '../../domain/entities/avatar_entity.dart';
+import '../../domain/entities/avatar_mood.dart';
 import '../../../live_interactions/domain/entities/run_session_entity.dart';
 import '../widgets/avatar_widget.dart';
 import '../widgets/place_grid.dart';
@@ -168,6 +169,7 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
   @override
   Widget build(BuildContext context) {
     final avatarAsync = ref.watch(userAvatarProvider);
+    final moodAsync = ref.watch(userAvatarMoodProvider);
     final colorScheme = Theme.of(context).colorScheme;
 
     return Scaffold(
@@ -243,7 +245,8 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
                 return _buildEmptyPlace(context, colorScheme);
               }
 
-              return _buildPlaceWithAvatar(context, colorScheme, avatar);
+              final mood = moodAsync.valueOrNull ?? AvatarMood.neutral;
+              return _buildPlaceWithAvatar(context, colorScheme, avatar, mood);
             },
           ),
           // Recenter button
@@ -287,6 +290,7 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
     BuildContext context,
     ColorScheme colorScheme,
     AvatarEntity avatar,
+    AvatarMood mood,
   ) {
     final friendsAvatarsAsync = ref.watch(friendsAvatarsProvider);
     final activeSessionsAsync = ref.watch(activeFriendSessionsProvider);
@@ -326,6 +330,7 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
                 AvatarWidget(
                   key: const ValueKey('user_avatar'),
                   avatar: avatar,
+                  mood: mood,
                   onPositionChanged: _onAvatarPositionChanged,
                   onTap: () => _showUserDrawer(avatar, email: user?.email),
                 ),

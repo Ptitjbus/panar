@@ -181,13 +181,25 @@ class DuelRemoteDataSource {
   }
 
   Stream<List<DuelReadyStateEntity>> watchReadyStates(String duelId) {
-    return _client
-        .from('duel_ready_states')
-        .stream(primaryKey: ['id'])
-        .eq('duel_id', duelId)
-        .map((rows) => rows
-            .map((r) => DuelReadyStateEntity.fromJson(r))
-            .toList());
+    // Polling fallback keeps waiting-room sync reliable even when realtime
+    // replication is not enabled yet on the table.
+    return Stream.periodic(const Duration(seconds: 1))
+        .asyncMap((_) async {
+          final rows = await _client
+              .from('duel_ready_states')
+              .select()
+              .eq('duel_id', duelId)
+              .timeout(const Duration(seconds: 10));
+          return (rows as List)
+              .map((r) => DuelReadyStateEntity.fromJson(r as Map<String, dynamic>))
+              .toList();
+        })
+        .handleError((error) {
+          if (error is PostgrestException) {
+            throw DatabaseFailure(error.message);
+          }
+          throw DatabaseFailure('Failed to watch ready states: $error');
+        });
   }
 }
 
