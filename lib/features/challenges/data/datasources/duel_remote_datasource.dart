@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../shared/providers/supabase_provider.dart';
 import '../models/duel_model.dart';
+import '../../domain/entities/duel_ready_state_entity.dart';
 
 class DuelRemoteDataSource {
   final SupabaseClient _client;
@@ -143,6 +144,50 @@ class DuelRemoteDataSource {
     } catch (e) {
       throw DatabaseFailure('Failed to resolve winner: $e');
     }
+  }
+
+  Future<void> cancelDuel(String duelId, String cancelledById) async {
+    try {
+      await _client
+          .from('duels')
+          .update({
+            'status': 'cancelled',
+            'cancelled_by_id': cancelledById,
+            'updated_at': DateTime.now().toIso8601String(),
+          })
+          .eq('id', duelId)
+          .timeout(const Duration(seconds: 10));
+    } on PostgrestException catch (e) {
+      throw DatabaseFailure(e.message);
+    } catch (e) {
+      throw DatabaseFailure('Failed to cancel duel: $e');
+    }
+  }
+
+  Future<void> setReady(String duelId, String userId) async {
+    try {
+      await _client
+          .from('duel_ready_states')
+          .upsert(
+            {'duel_id': duelId, 'user_id': userId, 'ready_at': DateTime.now().toIso8601String()},
+            onConflict: 'duel_id,user_id',
+          )
+          .timeout(const Duration(seconds: 10));
+    } on PostgrestException catch (e) {
+      throw DatabaseFailure(e.message);
+    } catch (e) {
+      throw DatabaseFailure('Failed to set ready: $e');
+    }
+  }
+
+  Stream<List<DuelReadyStateEntity>> watchReadyStates(String duelId) {
+    return _client
+        .from('duel_ready_states')
+        .stream(primaryKey: ['id'])
+        .eq('duel_id', duelId)
+        .map((rows) => rows
+            .map((r) => DuelReadyStateEntity.fromJson(r))
+            .toList());
   }
 }
 
