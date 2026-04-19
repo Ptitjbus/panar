@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/entities/duel_entity.dart';
+import '../../domain/entities/duel_ready_state_entity.dart';
 import '../../domain/repositories/duel_repository.dart';
 import '../datasources/duel_remote_datasource.dart';
 
@@ -73,6 +74,21 @@ class DuelRepositoryImpl implements DuelRepository {
 
     final winnerId = challengerDist >= challengedDist ? duel.challengerId : duel.challengedId;
     await _ds.resolveWinner(duelId, winnerId);
+  }
+
+  @override
+  Future<void> cancelDuel(String duelId) async {
+    await _ds.cancelDuel(duelId, _userId);
+  }
+
+  @override
+  Future<void> setReady(String duelId) async {
+    await _ds.setReady(duelId, _userId);
+  }
+
+  @override
+  Stream<List<DuelReadyStateEntity>> watchReadyStates(String duelId) {
+    return _ds.watchReadyStates(duelId);
   }
 }
 
