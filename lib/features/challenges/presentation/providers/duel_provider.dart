@@ -3,6 +3,7 @@ import '../../../../core/errors/failures.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/repositories/duel_repository_impl.dart';
 import '../../domain/entities/duel_entity.dart';
+import '../../domain/entities/duel_ready_state_entity.dart';
 
 class DuelState {
   final List<DuelEntity> myDuels;
@@ -139,10 +140,43 @@ class DuelNotifier extends StateNotifier<DuelState> {
     }
   }
 
+  Future<bool> cancelDuel(String duelId) async {
+    try {
+      final repo = _ref.read(duelRepositoryProvider);
+      await repo.cancelDuel(duelId);
+      state = state.copyWith(successMessage: 'Duel annulé');
+      await loadDuels();
+      return true;
+    } on DatabaseFailure catch (e) {
+      state = state.copyWith(errorMessage: e.message);
+      return false;
+    } catch (e) {
+      state = state.copyWith(errorMessage: "Erreur lors de l'annulation");
+      return false;
+    }
+  }
+
+  Future<void> setReady(String duelId) async {
+    try {
+      final repo = _ref.read(duelRepositoryProvider);
+      await repo.setReady(duelId);
+    } on DatabaseFailure catch (e) {
+      state = state.copyWith(errorMessage: e.message);
+    } catch (e) {
+      state = state.copyWith(errorMessage: 'Erreur salle d\'attente');
+    }
+  }
+
   void clearMessages() => state = state.copyWith();
 }
 
 final duelNotifierProvider = StateNotifierProvider<DuelNotifier, DuelState>((ref) {
   ref.watch(authStateProvider); // rebuild when auth changes
   return DuelNotifier(ref);
+});
+
+final duelReadyStatesProvider =
+    StreamProvider.family<List<DuelReadyStateEntity>, String>((ref, duelId) {
+  final repo = ref.watch(duelRepositoryProvider);
+  return repo.watchReadyStates(duelId);
 });
