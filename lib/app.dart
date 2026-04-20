@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 import 'package:go_router/go_router.dart';
 import 'core/constants/app_constants.dart';
 import 'core/observers/route_observer.dart';
+import 'core/services/analytics_service.dart';
+import 'core/services/remote_config_service.dart';
 import 'core/constants/route_constants.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/presentation/pages/login_page.dart';
@@ -35,10 +40,14 @@ final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
   final profileAsync = ref.watch(userProfileProvider);
   final prefs = ref.watch(sharedPreferencesProvider);
+  final firebaseAnalytics = ref.watch(firebaseAnalyticsProvider);
 
   return GoRouter(
     initialLocation: Routes.home,
-    observers: [appRouteObserver],
+    observers: [
+      appRouteObserver,
+      FirebaseAnalyticsObserver(analytics: firebaseAnalytics),
+    ],
     redirect: (context, state) {
       // Get onboarding status from SharedPreferences (synchronous)
       final hasSeenOnboarding =
@@ -214,14 +223,22 @@ class MyApp extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(routerProvider);
+    ref.watch(experimentsBootstrapProvider);
 
     // Initialiser les notifications dès que l'utilisateur se connecte
     ref.listen(authStateProvider, (previous, next) {
       final wasLoggedIn = previous?.valueOrNull != null;
       final isLoggedIn = next.valueOrNull != null;
+      final analyticsService = ref.read(analyticsServiceProvider);
+
       if (!wasLoggedIn && isLoggedIn) {
+        unawaited(analyticsService.setUserId(next.valueOrNull?.id));
         NotificationSetupService.initialize();
         NotificationHandler.initialize(ref);
+      }
+
+      if (wasLoggedIn && !isLoggedIn) {
+        unawaited(analyticsService.setUserId(null));
       }
     });
 

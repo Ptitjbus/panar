@@ -42,7 +42,10 @@
       "mcp__dart__launch_app",
       "Bash(flutter doctor *)",
       "Bash(flutter run *)",
-      "Bash(kill %1)"
+      "Bash(kill %1)",
+      "mcp__claude_ai_Figma__whoami",
+      "mcp__claude_ai_Figma__get_metadata",
+      "mcp__claude_ai_Figma__use_figma"
     ]
   },
   "enabledMcpjsonServers": [

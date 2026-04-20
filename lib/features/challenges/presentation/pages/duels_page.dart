@@ -1,7 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import '../../../../core/constants/route_constants.dart';
+import '../../../../core/services/analytics_service.dart';
+import '../../../../core/services/remote_config_service.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/duel_provider.dart';
 import '../widgets/duel_card.dart';
@@ -13,15 +17,28 @@ class DuelsPage extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final state = ref.watch(duelNotifierProvider);
     final currentUserId = ref.watch(authStateProvider).value?.id ?? '';
+    final ctaVariant = ref.watch(trackedDuelsCtaVariantProvider);
+    final ctaConfig = _duelsCtaConfigForVariant(ctaVariant);
+
+    void openCreateDuel(String source) {
+      unawaited(
+        ref.read(analyticsServiceProvider).logFeatureClick(
+          feature: 'open_create_duel',
+          variant: ctaVariant,
+          source: source,
+        ),
+      );
+      context.push(Routes.createDuel);
+    }
 
     return Scaffold(
       appBar: AppBar(
         title: const Text('Duels ⚔️'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.add),
-            tooltip: 'Nouveau duel',
-            onPressed: () => context.push(Routes.createDuel),
+            icon: Icon(ctaConfig.icon),
+            tooltip: ctaConfig.label,
+            onPressed: () => openCreateDuel('duels_appbar'),
           ),
         ],
       ),
@@ -84,12 +101,42 @@ class DuelsPage extends ConsumerWidget {
               ),
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => context.push(Routes.createDuel),
-        icon: const Icon(Icons.add),
-        label: const Text('Nouveau duel'),
+        onPressed: () => openCreateDuel('duels_fab'),
+        icon: Icon(ctaConfig.icon),
+        label: Text(ctaConfig.label),
         backgroundColor: const Color(0xFF6C63FF),
         foregroundColor: Colors.white,
       ),
     );
   }
+}
+
+_DuelsCtaConfig _duelsCtaConfigForVariant(String variant) {
+  switch (variant) {
+    case 'icon_only':
+      return const _DuelsCtaConfig(
+        label: 'Créer',
+        icon: Icons.sports_kabaddi,
+      );
+    case 'challenge_now':
+      return const _DuelsCtaConfig(
+        label: 'Défier maintenant',
+        icon: Icons.flash_on,
+      );
+    default:
+      return const _DuelsCtaConfig(
+        label: 'Nouveau duel',
+        icon: Icons.add,
+      );
+  }
+}
+
+class _DuelsCtaConfig {
+  const _DuelsCtaConfig({
+    required this.label,
+    required this.icon,
+  });
+
+  final String label;
+  final IconData icon;
 }
