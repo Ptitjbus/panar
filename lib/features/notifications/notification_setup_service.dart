@@ -5,22 +5,24 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-/// Initialise Firebase Messaging, demande la permission iOS, enregistre le token
-/// dans device_tokens, et configure l'affichage foreground.
+/// Initialise Firebase Messaging, peut demander la permission iOS,
+/// enregistre le token dans device_tokens, et configure l'affichage foreground.
 class NotificationSetupService {
   static StreamSubscription<String>? _tokenRefreshSub;
   static StreamSubscription<RemoteMessage>? _messageSub;
   static final _localNotifications = FlutterLocalNotificationsPlugin();
   static int _notifId = 0;
 
-  static Future<void> initialize() async {
+  static Future<void> initialize({bool requestPermission = true}) async {
     await _initLocalNotifications();
 
-    final settings = await FirebaseMessaging.instance.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-    );
+    final settings = requestPermission
+        ? await FirebaseMessaging.instance.requestPermission(
+            alert: true,
+            badge: true,
+            sound: true,
+          )
+        : await FirebaseMessaging.instance.getNotificationSettings();
 
     debugPrint('[Notifications] Auth status: ${settings.authorizationStatus}');
     const authorized = {
@@ -62,7 +64,9 @@ class NotificationSetupService {
           apnsToken = await FirebaseMessaging.instance.getAPNSToken();
         }
         if (apnsToken == null) {
-          debugPrint('[Notifications] APNS token toujours null après attente — abandon.');
+          debugPrint(
+            '[Notifications] APNS token toujours null après attente — abandon.',
+          );
           return;
         }
         debugPrint('[Notifications] APNS token OK: $apnsToken');

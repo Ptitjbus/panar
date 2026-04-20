@@ -1,142 +1,135 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+
+import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/route_constants.dart';
-import '../../../../core/services/analytics_service.dart';
-import '../../../../core/services/remote_config_service.dart';
+import '../../../../shared/widgets/panar_breadcrumb.dart';
+import '../../../../shared/widgets/panar_button.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
-import '../providers/duel_provider.dart';
-import '../widgets/duel_card.dart';
+import '../providers/group_challenge_provider.dart';
+import '../widgets/group_challenge_card.dart';
 
 class DuelsPage extends ConsumerWidget {
   const DuelsPage({super.key});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(duelNotifierProvider);
+    final state = ref.watch(groupChallengeNotifierProvider);
     final currentUserId = ref.watch(authStateProvider).value?.id ?? '';
-    final ctaVariant = ref.watch(trackedDuelsCtaVariantProvider);
-    final ctaConfig = _duelsCtaConfigForVariant(ctaVariant);
-
-    void openCreateDuel(String source) {
-      unawaited(
-        ref.read(analyticsServiceProvider).logFeatureClick(
-          feature: 'open_create_duel',
-          variant: ctaVariant,
-          source: source,
-        ),
-      );
-      context.push(Routes.createDuel);
-    }
+    final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Duels ⚔️'),
-        actions: [
-          IconButton(
-            icon: Icon(ctaConfig.icon),
-            tooltip: ctaConfig.label,
-            onPressed: () => openCreateDuel('duels_appbar'),
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () => ref.read(duelNotifierProvider.notifier).loadDuels(),
-        child: state.isLoading && state.myDuels.isEmpty && state.pendingInvites.isEmpty
-            ? const Center(child: CircularProgressIndicator())
-            : CustomScrollView(
-                slivers: [
-                  if (state.pendingInvites.isNotEmpty) ...[
-                    const SliverToBoxAdapter(
-                      child: Padding(
-                        padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
-                        child: Text(
-                          'Invitations reçues',
-                          style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
-                        ),
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        child: RefreshIndicator(
+          onRefresh: () => ref
+              .read(groupChallengeNotifierProvider.notifier)
+              .loadChallenges(),
+          child: CustomScrollView(
+            slivers: [
+              SliverToBoxAdapter(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const PanarBreadcrumb('Quêtes collaboratives'),
+                      const SizedBox(height: 12),
+                      Text(
+                        'À deux on va plus loin !',
+                        style: theme.textTheme.displaySmall,
                       ),
-                    ),
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (_, i) => DuelCard(
-                          duel: state.pendingInvites[i],
-                          currentUserId: currentUserId,
-                        ),
-                        childCount: state.pendingInvites.length,
+                      const SizedBox(height: 4),
+                      Text(
+                        'Petit pas par petit pas.',
+                        style: theme.textTheme.bodyMedium,
                       ),
-                    ),
-                  ],
-                  const SliverToBoxAdapter(
+                      const SizedBox(height: 20),
+                    ],
+                  ),
+                ),
+              ),
+              if (state.isLoading &&
+                  state.myChallenges.isEmpty &&
+                  state.pendingInvites.isEmpty)
+                const SliverFillRemaining(
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else ...[
+                if (state.pendingInvites.isNotEmpty) ...[
+                  SliverToBoxAdapter(
                     child: Padding(
-                      padding: EdgeInsets.fromLTRB(16, 16, 16, 8),
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
                       child: Text(
-                        'Mes duels',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        'Invitations reçues',
+                        style: theme.textTheme.titleMedium,
                       ),
                     ),
                   ),
-                  if (state.myDuels.isEmpty)
-                    const SliverFillRemaining(
-                      child: Center(
-                        child: Text(
-                          'Aucun duel pour le moment.\nDéfie un ami !',
-                          textAlign: TextAlign.center,
-                          style: TextStyle(color: Colors.grey),
-                        ),
-                      ),
-                    )
-                  else
-                    SliverList(
-                      delegate: SliverChildBuilderDelegate(
-                        (_, i) => DuelCard(
-                          duel: state.myDuels[i],
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate((_, i) {
+                      final challenge = state.pendingInvites[i];
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(4, 0, 4, 0),
+                        child: GroupChallengeCard(
+                          challenge: challenge,
                           currentUserId: currentUserId,
+                          onRespond: (accept) => ref
+                              .read(groupChallengeNotifierProvider.notifier)
+                              .respondToChallenge(challenge.id, accept: accept),
                         ),
-                        childCount: state.myDuels.length,
+                      );
+                    }, childCount: state.pendingInvites.length),
+                  ),
+                ],
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 12, 20, 8),
+                    child: Text(
+                      'Mes quêtes collaboratives',
+                      style: theme.textTheme.titleMedium,
+                    ),
+                  ),
+                ),
+                if (state.myChallenges.isEmpty)
+                  SliverToBoxAdapter(
+                    child: Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+                      child: Text(
+                        'Aucune quête collaborative pour le moment.',
+                        style: theme.textTheme.bodyMedium,
                       ),
                     ),
-                ],
-              ),
-      ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => openCreateDuel('duels_fab'),
-        icon: Icon(ctaConfig.icon),
-        label: Text(ctaConfig.label),
-        backgroundColor: const Color(0xFF6C63FF),
-        foregroundColor: Colors.white,
+                  )
+                else
+                  SliverList(
+                    delegate: SliverChildBuilderDelegate(
+                      (_, i) => Padding(
+                        padding: const EdgeInsets.fromLTRB(4, 0, 4, 0),
+                        child: GroupChallengeCard(
+                          challenge: state.myChallenges[i],
+                          currentUserId: currentUserId,
+                        ),
+                      ),
+                      childCount: state.myChallenges.length,
+                    ),
+                  ),
+                SliverToBoxAdapter(
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+                    child: PanarButton(
+                      label: 'Créer une quête collaborative',
+                      onPressed: () =>
+                          context.push(Routes.createGroupChallenge),
+                    ),
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
       ),
     );
   }
-}
-
-_DuelsCtaConfig _duelsCtaConfigForVariant(String variant) {
-  switch (variant) {
-    case 'icon_only':
-      return const _DuelsCtaConfig(
-        label: 'Créer',
-        icon: Icons.sports_kabaddi,
-      );
-    case 'challenge_now':
-      return const _DuelsCtaConfig(
-        label: 'Défier maintenant',
-        icon: Icons.flash_on,
-      );
-    default:
-      return const _DuelsCtaConfig(
-        label: 'Nouveau duel',
-        icon: Icons.add,
-      );
-  }
-}
-
-class _DuelsCtaConfig {
-  const _DuelsCtaConfig({
-    required this.label,
-    required this.icon,
-  });
-
-  final String label;
-  final IconData icon;
 }

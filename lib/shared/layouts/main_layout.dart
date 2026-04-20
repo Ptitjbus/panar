@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import '../../core/constants/app_colors.dart';
 import '../../core/constants/route_constants.dart';
 import '../../features/challenges/presentation/pages/challenges_page.dart';
 import '../../features/home/presentation/pages/place_screen.dart';
@@ -55,9 +57,8 @@ class _MainLayoutState extends State<MainLayout> {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: PageView(
         controller: _pageController,
         onPageChanged: _onPageChanged,
@@ -70,45 +71,9 @@ class _MainLayoutState extends State<MainLayout> {
         onPressed: () => context.push(Routes.runLaunch),
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      bottomNavigationBar: BottomAppBar(
-        shape: const CircularNotchedRectangle(),
-        notchMargin: 8,
-        color: colorScheme.surface,
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceAround,
-          children: [
-            _NavItem(
-              icon: Icons.home_outlined,
-              activeIcon: Icons.home,
-              label: 'Accueil',
-              isSelected: _currentIndex == 0,
-              onTap: () => _onItemTapped(0),
-            ),
-            _NavItem(
-              icon: Icons.emoji_events_outlined,
-              activeIcon: Icons.emoji_events,
-              label: 'Défis',
-              isSelected: _currentIndex == 1,
-              onTap: () => _onItemTapped(1),
-            ),
-            // Espace central pour le FAB
-            const SizedBox(width: 64),
-            _NavItem(
-              icon: Icons.shopping_bag_outlined,
-              activeIcon: Icons.shopping_bag,
-              label: 'Boutique',
-              isSelected: _currentIndex == 2,
-              onTap: () => _onItemTapped(2),
-            ),
-            _NavItem(
-              icon: Icons.person_outline,
-              activeIcon: Icons.person,
-              label: 'Profil',
-              isSelected: _currentIndex == 3,
-              onTap: () => _onItemTapped(3),
-            ),
-          ],
-        ),
+      bottomNavigationBar: _PanarBottomBar(
+        currentIndex: _currentIndex,
+        onTap: _onItemTapped,
       ),
     );
   }
@@ -121,18 +86,67 @@ class _RunFab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
     return SizedBox(
       width: 64,
       height: 64,
       child: FloatingActionButton(
         heroTag: 'run_fab',
         onPressed: onPressed,
-        backgroundColor: colorScheme.primary,
-        foregroundColor: colorScheme.onPrimary,
-        elevation: 6,
+        backgroundColor: AppColors.surface,
+        foregroundColor: AppColors.textPrimary,
+        elevation: 2,
         shape: const CircleBorder(),
-        child: const Icon(Icons.play_arrow_rounded, size: 36),
+        child: const Icon(Icons.rocket_launch_outlined, size: 28),
+      ),
+    );
+  }
+}
+
+class _PanarBottomBar extends StatelessWidget {
+  final int currentIndex;
+  final ValueChanged<int> onTap;
+
+  const _PanarBottomBar({required this.currentIndex, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return BottomAppBar(
+      shape: const CircularNotchedRectangle(),
+      notchMargin: 8,
+      color: AppColors.surface,
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: [
+          _NavItem(
+            icon: Icons.sentiment_satisfied_alt_outlined,
+            activeIcon: Icons.sentiment_satisfied_alt,
+            label: 'Carte',
+            isSelected: currentIndex == 0,
+            onTap: () => onTap(0),
+          ),
+          _NavItem(
+            icon: Icons.shield_outlined,
+            activeIcon: Icons.shield,
+            label: 'Défis',
+            isSelected: currentIndex == 1,
+            onTap: () => onTap(1),
+          ),
+          const SizedBox(width: 64),
+          _NavItem(
+            icon: Icons.shopping_bag_outlined,
+            activeIcon: Icons.shopping_bag,
+            label: 'Boutique',
+            isSelected: currentIndex == 2,
+            onTap: () => onTap(2),
+          ),
+          _NavItem(
+            icon: Icons.remove_red_eye_outlined,
+            activeIcon: Icons.remove_red_eye,
+            label: 'Profil',
+            isSelected: currentIndex == 3,
+            onTap: () => onTap(3),
+          ),
+        ],
       ),
     );
   }
@@ -155,10 +169,7 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final color = isSelected
-        ? colorScheme.primary
-        : colorScheme.onSurfaceVariant;
+    final color = isSelected ? AppColors.textPrimary : AppColors.textSecondary;
     return Expanded(
       child: InkWell(
         onTap: onTap,
@@ -168,14 +179,14 @@ class _NavItem extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(isSelected ? activeIcon : icon, color: color, size: 24),
+              Icon(isSelected ? activeIcon : icon, color: color, size: 22),
               const SizedBox(height: 2),
               Text(
                 label,
-                style: TextStyle(
+                style: GoogleFonts.inter(
                   fontSize: 10,
                   color: color,
-                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.normal,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),
             ],

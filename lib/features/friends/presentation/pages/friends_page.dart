@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/constants/app_colors.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../providers/friends_provider.dart';
 import '../widgets/friend_list_item.dart';
@@ -141,7 +142,13 @@ class FriendsPage extends ConsumerWidget {
                                       const FriendSearchDialog(),
                                 );
                               },
-                              icon: const Icon(Icons.person_add),
+                              icon: const Icon(
+                                Icons.person_add,
+                                color: AppColors.textPrimary,
+                              ),
+                              style: TextButton.styleFrom(
+                                foregroundColor: AppColors.textPrimary,
+                              ),
                               label: const Text('Ajouter un ami'),
                             ),
                           ],
@@ -180,6 +187,8 @@ class FriendsPage extends ConsumerWidget {
             builder: (context) => const FriendSearchDialog(),
           );
         },
+        backgroundColor: AppColors.textPrimary,
+        foregroundColor: Colors.white,
         child: const Icon(Icons.person_add),
       ),
     );

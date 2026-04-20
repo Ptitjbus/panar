@@ -30,6 +30,14 @@ class _AvatarWidgetState extends State<AvatarWidget> {
   late Offset _position;
   final bool _isMoving = false;
 
+  Color _parseColor(String colorHex) {
+    try {
+      return Color(int.parse(colorHex.replaceFirst('#', '0xFF')));
+    } catch (_) {
+      return const Color(0xFFF4A574);
+    }
+  }
+
   @override
   void initState() {
     super.initState();
@@ -41,19 +49,8 @@ class _AvatarWidgetState extends State<AvatarWidget> {
     });
   }
 
-  Color _parseColor(String colorHex) {
-    try {
-      return Color(int.parse(colorHex.replaceFirst('#', '0xFF')));
-    } catch (e) {
-      // Fallback to turquoise if color parsing fails
-      return const Color(0xFF4ECDC4);
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    final color = _parseColor(widget.avatar.colorHex);
-
     return Positioned(
       left: _position.dx - 20, // Center the 40px avatar
       top: _position.dy - 20,
@@ -63,39 +60,21 @@ class _AvatarWidgetState extends State<AvatarWidget> {
           clipBehavior: Clip.none,
           children: [
             AnimatedAvatarWidget(
-              isMoving: _isMoving,
+              isMoving: widget.isRunning || _isMoving,
               size: 40,
-              colorFilter: color,
+              mood: widget.mood,
+              colorFilter: _parseColor(widget.avatar.colorHex),
               showShadow: true,
-            ),
-            Positioned(
-              top: -10,
-              left: -10,
-              child: Container(
-                padding: const EdgeInsets.all(4),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(999),
-                  boxShadow: const [
-                    BoxShadow(
-                      color: Colors.black26,
-                      blurRadius: 4,
-                      offset: Offset(0, 2),
-                    ),
-                  ],
-                ),
-                child: Text(
-                  widget.mood.emoji,
-                  style: const TextStyle(fontSize: 12),
-                ),
-              ),
             ),
             if (widget.isRunning)
               Positioned(
                 top: -12,
                 right: -20,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 4,
+                    vertical: 2,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.redAccent,
                     borderRadius: BorderRadius.circular(8),
@@ -104,7 +83,7 @@ class _AvatarWidgetState extends State<AvatarWidget> {
                         color: Colors.black26,
                         blurRadius: 4,
                         offset: Offset(0, 2),
-                      )
+                      ),
                     ],
                   ),
                   child: const Row(

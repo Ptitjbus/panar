@@ -1,27 +1,27 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../data/repositories/profile_repository_impl.dart';
 import '../../domain/entities/profile_entity.dart';
 
-/// Provider for user profile based on current user ID
-final userProfileProvider = FutureProvider<ProfileEntity?>((ref) async {
-  // Use watch(authStateProvider.future) to wait for the first data value
-  // This will naturally suspend this provider while authState is loading
-  final user = await ref.watch(authStateProvider.future);
+/// Prevents the router from redirecting back to /username-setup while the
+/// wizard is still in progress or immediately after completion.
+/// Set to true at the start of _finish() before any async operations.
+final wizardCompleteProvider = StateProvider<bool>((ref) => false);
 
+final userProfileProvider = FutureProvider<ProfileEntity?>((ref) async {
+  final user = await ref.watch(authStateProvider.future);
   if (user == null) return null;
 
   try {
     final profileRepository = ref.watch(profileRepositoryProvider);
     return await profileRepository.getProfile(user.id);
   } catch (e) {
-    // If getting profile fails (e.g. doesn't exist yet), return null
     return null;
   }
 });
 
-/// State class for profile actions
 class ProfileState {
   final bool isLoading;
   final String? errorMessage;
@@ -46,30 +46,22 @@ class ProfileState {
   }
 }
 
-/// Profile actions state notifier
 class ProfileNotifier extends StateNotifier<ProfileState> {
   final Ref ref;
 
   ProfileNotifier(this.ref) : super(const ProfileState());
 
-  /// Update username
   Future<bool> updateUsername(String username) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      final authState = ref.read(authStateProvider);
-      final user = authState.value;
-
-      if (user == null) {
-        throw const AuthFailure('User not authenticated');
-      }
+      final user = ref.read(authStateProvider).value;
+      if (user == null) throw const AuthFailure('User not authenticated');
 
       final profileRepository = ref.read(profileRepositoryProvider);
       await profileRepository.updateUsername(user.id, username);
 
-      // Invalidate the profile provider to refetch the updated profile
       ref.invalidate(userProfileProvider);
-
       state = state.copyWith(
         isLoading: false,
         successMessage: 'Username updated successfully!',
@@ -87,7 +79,6 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     }
   }
 
-  /// Check username availability
   Future<bool> checkUsernameAvailability(String username) async {
     try {
       final profileRepository = ref.read(profileRepositoryProvider);
@@ -97,46 +88,80 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     }
   }
 
-  /// Mark onboarding as complete
-  Future<void> markOnboardingComplete() async {
+  Future<void> markOnboardingComplete({String? avatarColor}) async {
     try {
-      final authState = ref.read(authStateProvider);
-      final user = authState.value;
-
+      final user = ref.read(authStateProvider).value;
       if (user == null) return;
 
       final profileRepository = ref.read(profileRepositoryProvider);
-      await profileRepository.markOnboardingComplete(user.id);
-
-      // Invalidate the profile provider to refetch the updated profile
-      ref.invalidate(userProfileProvider);
+      await profileRepository.markOnboardingComplete(
+        user.id,
+        avatarColor: avatarColor,
+      );
     } catch (e) {
-      // Silently fail
+      debugPrint('[ProfileNotifier] markOnboardingComplete error: $e');
+    } finally {
+      // Always invalidate so the router gets fresh data, regardless of success/failure.
+      // The wizardCompleteProvider flag protects against the redirect loop.
+      ref.invalidate(userProfileProvider);
     }
   }
 
-  /// Update profile
-  Future<bool> updateProfile({String? fullName, String? avatarUrl}) async {
+  Future<void> updateOnboardingProgress({
+    int? onboardingActivityIndex,
+    int? onboardingTimeIndex,
+    bool? onboardingUsernameDone,
+    bool? onboardingLocationPermissionGranted,
+    bool? onboardingNotificationsPermissionGranted,
+    bool? onboardingAvatarDone,
+    String? avatarColor,
+    bool? hasCompletedOnboarding,
+  }) async {
+    try {
+      final user = ref.read(authStateProvider).value;
+      if (user == null) return;
+
+      final profileRepository = ref.read(profileRepositoryProvider);
+      await profileRepository.updateOnboardingProgress(
+        userId: user.id,
+        onboardingActivityIndex: onboardingActivityIndex,
+        onboardingTimeIndex: onboardingTimeIndex,
+        onboardingUsernameDone: onboardingUsernameDone,
+        onboardingLocationPermissionGranted:
+            onboardingLocationPermissionGranted,
+        onboardingNotificationsPermissionGranted:
+            onboardingNotificationsPermissionGranted,
+        onboardingAvatarDone: onboardingAvatarDone,
+        avatarColor: avatarColor,
+        hasCompletedOnboarding: hasCompletedOnboarding,
+      );
+    } catch (e) {
+      debugPrint('[ProfileNotifier] updateOnboardingProgress error: $e');
+    } finally {
+      ref.invalidate(userProfileProvider);
+    }
+  }
+
+  Future<bool> updateProfile({
+    String? fullName,
+    String? avatarUrl,
+    String? avatarColor,
+  }) async {
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
-      final authState = ref.read(authStateProvider);
-      final user = authState.value;
-
-      if (user == null) {
-        throw const AuthFailure('User not authenticated');
-      }
+      final user = ref.read(authStateProvider).value;
+      if (user == null) throw const AuthFailure('User not authenticated');
 
       final profileRepository = ref.read(profileRepositoryProvider);
       await profileRepository.updateProfile(
         userId: user.id,
         fullName: fullName,
         avatarUrl: avatarUrl,
+        avatarColor: avatarColor,
       );
 
-      // Invalidate the profile provider to refetch the updated profile
       ref.invalidate(userProfileProvider);
-
       state = state.copyWith(
         isLoading: false,
         successMessage: 'Profile updated successfully!',
@@ -154,13 +179,11 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
     }
   }
 
-  /// Clear error message
   void clearError() {
     state = state.copyWith(errorMessage: null, successMessage: null);
   }
 }
 
-/// Provider for profile actions
 final profileNotifierProvider =
     StateNotifierProvider<ProfileNotifier, ProfileState>((ref) {
       return ProfileNotifier(ref);

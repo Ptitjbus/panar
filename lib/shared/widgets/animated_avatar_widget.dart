@@ -1,152 +1,134 @@
 import 'package:flutter/material.dart';
-import 'package:lottie/lottie.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'package:flutter/services.dart';
 
-/// Helper function to darken a color by a given factor (0.0 to 1.0)
-Color _darkenColor(Color color, double factor) {
-  assert(factor >= 0 && factor <= 1, 'Factor must be between 0 and 1');
+import '../../features/home/domain/entities/avatar_mood.dart';
 
-  final hsl = HSLColor.fromColor(color);
-  final darkerHsl = hsl.withLightness(
-    (hsl.lightness * (1 - factor)).clamp(0.0, 1.0),
-  );
-  return darkerHsl.toColor();
+final Map<String, Future<String>> _avatarSvgCache = <String, Future<String>>{};
+
+String _svgPathForMood(AvatarMood mood, {bool isMoving = false}) {
+  if (isMoving) return 'assets/images/avatar_running.svg';
+  return switch (mood) {
+    AvatarMood.crying => 'assets/images/avatar_sad.svg',
+    AvatarMood.tired => 'assets/images/avatar_tired.svg',
+    AvatarMood.neutral => 'assets/images/avatar_neutral.svg',
+    AvatarMood.happy => 'assets/images/avatar_normal.svg',
+    AvatarMood.excited => 'assets/images/avatar_normal.svg',
+  };
 }
 
-/// Optimized widget that displays a Lottie-animated avatar
-/// with automatic state transitions between idle and walking animations.
-///
-/// Performance optimizations:
-/// - RepaintBoundary to isolate repaints
-/// - AnimatedSwitcher for smooth transitions
-/// - Proper key management to prevent unnecessary rebuilds
-/// - Const constructor where possible
+String _hexRgb(Color color) {
+  final argb = color.toARGB32();
+  final red = (argb >> 16) & 0xFF;
+  final green = (argb >> 8) & 0xFF;
+  final blue = argb & 0xFF;
+  return '#${red.toRadixString(16).padLeft(2, '0').toUpperCase()}${green.toRadixString(16).padLeft(2, '0').toUpperCase()}${blue.toRadixString(16).padLeft(2, '0').toUpperCase()}';
+}
+
+Future<String> _loadSvgWithBodyColor(String assetPath, Color bodyColor) {
+  final cacheKey = '$assetPath-${bodyColor.toARGB32()}';
+  return _avatarSvgCache.putIfAbsent(cacheKey, () async {
+    final rawSvg = await rootBundle.loadString(assetPath);
+    final bodyGroupPattern = RegExp(
+      r"""<g\b[^>]*\bid=(['"])body\1[^>]*>([\s\S]*?)</g>""",
+    );
+    final fillPattern = RegExp(r"""(\bfill=)(['"])([^'"]*)(\2)""");
+    final bodyHex = _hexRgb(bodyColor);
+
+    return rawSvg.replaceFirstMapped(bodyGroupPattern, (bodyMatch) {
+      final group = bodyMatch.group(0)!;
+      return group.replaceAllMapped(fillPattern, (fillMatch) {
+        final currentValue = fillMatch.group(3)?.toLowerCase();
+        if (currentValue == 'none') return fillMatch.group(0)!;
+        return '${fillMatch.group(1)}${fillMatch.group(2)}$bodyHex${fillMatch.group(4)}';
+      });
+    });
+  });
+}
+
+/// Widget that displays the Peton character as an SVG illustration.
+/// The SVG is chosen based on mood and movement state.
 class AnimatedAvatarWidget extends StatelessWidget {
-  /// Whether the avatar is currently moving
   final bool isMoving;
-
-  /// Size of the avatar (width and height)
   final double size;
-
-  /// Optional color filter to tint the avatar
-  final Color? colorFilter;
-
-  /// Whether to show a shadow behind the avatar
+  final AvatarMood mood;
   final bool showShadow;
+
+  /// Optional color applied only to the SVG group with `id="body"`.
+  final Color? colorFilter;
 
   const AnimatedAvatarWidget({
     super.key,
     required this.isMoving,
     this.size = 40.0,
+    this.mood = AvatarMood.neutral,
     this.colorFilter,
     this.showShadow = true,
   });
 
   @override
   Widget build(BuildContext context) {
-    final animationPath = isMoving
-        ? 'assets/animations/avatar_walk.json'
-        : 'assets/animations/avatar_idle.json';
+    final path = _svgPathForMood(mood, isMoving: isMoving);
+    final color = colorFilter;
+    final svgKey = color == null
+        ? ValueKey(path)
+        : ValueKey('$path-${color.toARGB32()}');
 
-    // Build the Lottie animation
-    Widget avatar = Lottie.asset(
-      animationPath,
-      key: ValueKey(animationPath), // Key for AnimatedSwitcher
-      width: size,
-      height: size,
-      fit: BoxFit.contain,
-      repeat: true,
-      animate: true,
-      // Enable merge paths for better performance
-      options: LottieOptions(enableMergePaths: true),
-      // Fallback when the Lottie file fails to load (e.g. on simulator)
-      errorBuilder: (context, error, stackTrace) {
-        return Container(
-          width: size,
-          height: size,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: colorFilter ?? const Color(0xFF4ECDC4),
-          ),
-          child: Icon(
-            Icons.person,
-            size: size * 0.55,
-            color: Colors.white,
-          ),
-        );
-      },
-      // Apply color filters with black eyes/mouth and darker back leg
-      delegates: colorFilter != null
-          ? LottieDelegates(
-              values: [
-                // Black color for eyes and mouth (HEAD Outlines)
-                ValueDelegate.colorFilter(
-                  const ['HEAD Outlines', '**'],
-                  value: const ColorFilter.mode(
-                    Colors.black,
-                    BlendMode.srcATop,
-                  ),
-                ),
-                // Color the body
-                ValueDelegate.colorFilter(const [
-                  'Shape Layer 1',
-                  '**',
-                ], value: ColorFilter.mode(colorFilter!, BlendMode.srcATop)),
-                // Color the front leg
-                ValueDelegate.colorFilter(const [
-                  'LEG front',
-                  '**',
-                ], value: ColorFilter.mode(colorFilter!, BlendMode.srcATop)),
-                // Color the back leg (slightly darker for depth)
-                ValueDelegate.colorFilter(
-                  const ['LEG Back', '**'],
-                  value: ColorFilter.mode(
-                    _darkenColor(colorFilter!, 0.15),
-                    BlendMode.srcATop,
-                  ),
-                ),
-              ],
-            )
-          : LottieDelegates(
-              values: [
-                // Black color for eyes and mouth even without colorFilter
-                ValueDelegate.colorFilter(
-                  const ['HEAD Outlines', '**'],
-                  value: const ColorFilter.mode(
-                    Colors.black,
-                    BlendMode.srcATop,
-                  ),
-                ),
-              ],
-            ),
-    );
+    Widget svg;
+    if (color == null) {
+      svg = SvgPicture.asset(
+        path,
+        key: svgKey,
+        width: size,
+        height: size,
+        fit: BoxFit.contain,
+      );
+    } else {
+      svg = FutureBuilder<String>(
+        future: _loadSvgWithBodyColor(path, color),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return SvgPicture.asset(
+              path,
+              key: svgKey,
+              width: size,
+              height: size,
+              fit: BoxFit.contain,
+            );
+          }
+          return SvgPicture.string(
+            snapshot.data!,
+            key: svgKey,
+            width: size,
+            height: size,
+            fit: BoxFit.contain,
+          );
+        },
+      );
+    }
 
-    // Add shadow if requested
     if (showShadow) {
-      avatar = Container(
+      svg = Container(
         width: size,
         height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.2),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+              color: Colors.black.withValues(alpha: 0.15),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
             ),
           ],
         ),
-        child: avatar,
+        child: svg,
       );
     }
 
-    // Use AnimatedSwitcher for smooth transitions between states
-    // Isolate repaints with RepaintBoundary for performance
     return RepaintBoundary(
       child: AnimatedSwitcher(
-        duration: const Duration(milliseconds: 200),
-        switchInCurve: Curves.easeIn,
-        switchOutCurve: Curves.easeOut,
-        child: avatar,
+        duration: const Duration(milliseconds: 300),
+        child: svg,
       ),
     );
   }

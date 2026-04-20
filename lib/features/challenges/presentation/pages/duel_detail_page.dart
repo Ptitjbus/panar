@@ -28,7 +28,7 @@ class _DuelDetailPageState extends ConsumerState<DuelDetailPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: const Text('Annuler le duel ?'),
+        title: const Text('Annuler le défi ?'),
         content: const Text('Cette action est irréversible.'),
         actions: [
           TextButton(
@@ -38,13 +38,15 @@ class _DuelDetailPageState extends ConsumerState<DuelDetailPage> {
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.danger),
-            child: const Text('Annuler le duel'),
+            child: const Text('Annuler le défi'),
           ),
         ],
       ),
     );
     if (confirmed == true && mounted) {
-      final success = await ref.read(duelNotifierProvider.notifier).cancelDuel(duelId);
+      final success = await ref
+          .read(duelNotifierProvider.notifier)
+          .cancelDuel(duelId);
       if (success && mounted) context.pop();
     }
   }
@@ -64,23 +66,28 @@ class _DuelDetailPageState extends ConsumerState<DuelDetailPage> {
         backgroundColor: AppColors.background,
         appBar: AppBar(
           backgroundColor: AppColors.surface,
-          title: const Text('Duel'),
+          title: const Text('Défi one-shot'),
         ),
-        body: const Center(child: Text('Duel introuvable')),
+        body: const Center(child: Text('Défi introuvable')),
       );
     }
 
     final otherProfile = duel.getOtherProfile(currentUserId);
     final otherName = otherProfile?.username ?? '…';
-    final challengerName = duel.challengerProfile?.username ?? duel.challengerId.substring(0, 6);
-    final challengedName = duel.challengedProfile?.username ?? duel.challengedId.substring(0, 6);
+    final challengerName =
+        duel.challengerProfile?.username ?? duel.challengerId.substring(0, 6);
+    final challengedName =
+        duel.challengedProfile?.username ?? duel.challengedId.substring(0, 6);
 
     return Scaffold(
       backgroundColor: AppColors.background,
       appBar: AppBar(
         backgroundColor: AppColors.surface,
         elevation: 0,
-        title: Text('vs @$otherName', style: const TextStyle(fontWeight: FontWeight.w700)),
+        title: Text(
+          'vs @$otherName',
+          style: const TextStyle(fontWeight: FontWeight.w700),
+        ),
       ),
       body: ListView(
         padding: const EdgeInsets.all(16),
@@ -97,15 +104,21 @@ class _DuelDetailPageState extends ConsumerState<DuelDetailPage> {
                       : Icons.schedule_rounded,
                   label: duel.timing == DuelTiming.live ? 'Live' : 'Différé',
                 ),
-                if (duel.timing == DuelTiming.async && duel.deadlineHours != null)
-                  _InfoRow(icon: Icons.timer_outlined, label: 'Délai : ${duel.deadlineHours}h'),
+                if (duel.timing == DuelTiming.async &&
+                    duel.deadlineHours != null)
+                  _InfoRow(
+                    icon: Icons.timer_outlined,
+                    label: 'Délai : ${duel.deadlineHours}h',
+                  ),
                 if (duel.targetDistanceMeters != null)
                   _InfoRow(
                     icon: Icons.straighten_rounded,
-                    label: '${(duel.targetDistanceMeters! / 1000).toStringAsFixed(1)} km',
+                    label:
+                        '${(duel.targetDistanceMeters! / 1000).toStringAsFixed(1)} km',
                     highlight: true,
                   ),
-                if (duel.description != null && duel.description!.isNotEmpty) ...[
+                if (duel.description != null &&
+                    duel.description!.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text(
                     duel.description!,
@@ -127,7 +140,7 @@ class _DuelDetailPageState extends ConsumerState<DuelDetailPage> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   const Text(
-                    'Tu as reçu ce défi',
+                    'Tu as reçu ce défi one-shot',
                     style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
                   ),
                   const SizedBox(height: 12),
@@ -140,7 +153,9 @@ class _DuelDetailPageState extends ConsumerState<DuelDetailPage> {
                               .respondToDuel(widget.duelId, accept: true),
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.success,
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
                           child: const Text('Accepter'),
                         ),
@@ -153,9 +168,14 @@ class _DuelDetailPageState extends ConsumerState<DuelDetailPage> {
                               .respondToDuel(widget.duelId, accept: false),
                           style: OutlinedButton.styleFrom(
                             side: const BorderSide(color: AppColors.border),
-                            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
                           ),
-                          child: const Text('Refuser', style: TextStyle(color: AppColors.textSecondary)),
+                          child: const Text(
+                            'Refuser',
+                            style: TextStyle(color: AppColors.textSecondary),
+                          ),
                         ),
                       ),
                     ],
@@ -164,7 +184,8 @@ class _DuelDetailPageState extends ConsumerState<DuelDetailPage> {
               ),
             ),
 
-          if ((duel.status == DuelStatus.accepted || duel.status == DuelStatus.active) &&
+          if ((duel.status == DuelStatus.accepted ||
+                  duel.status == DuelStatus.active) &&
               duel.timing == DuelTiming.live) ...[
             const SizedBox(height: 12),
             SizedBox(
@@ -181,13 +202,16 @@ class _DuelDetailPageState extends ConsumerState<DuelDetailPage> {
                 ),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.accent,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
               ),
             ),
           ],
 
-          if ((duel.status == DuelStatus.accepted || duel.status == DuelStatus.active) &&
+          if ((duel.status == DuelStatus.accepted ||
+                  duel.status == DuelStatus.active) &&
               duel.timing == DuelTiming.async) ...[
             const SizedBox(height: 12),
             SizedBox(
@@ -202,7 +226,9 @@ class _DuelDetailPageState extends ConsumerState<DuelDetailPage> {
                 ),
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.accent,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                 ),
               ),
             ),
@@ -214,18 +240,25 @@ class _DuelDetailPageState extends ConsumerState<DuelDetailPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const Text('Résultat', style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15)),
+                  const Text(
+                    'Résultat',
+                    style: TextStyle(fontWeight: FontWeight.w700, fontSize: 15),
+                  ),
                   const SizedBox(height: 10),
                   if (duel.winnerId != null)
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          duel.winnerId == currentUserId ? '🥇 Victoire !' : '🥈 Défaite',
+                          duel.winnerId == currentUserId
+                              ? '🥇 Victoire !'
+                              : '🥈 Défaite',
                           style: TextStyle(
                             fontSize: 22,
                             fontWeight: FontWeight.w800,
-                            color: duel.winnerId == currentUserId ? AppColors.success : AppColors.danger,
+                            color: duel.winnerId == currentUserId
+                                ? AppColors.success
+                                : AppColors.danger,
                           ),
                         ),
                         const SizedBox(height: 10),
@@ -245,7 +278,8 @@ class _DuelDetailPageState extends ConsumerState<DuelDetailPage> {
             ),
           ],
 
-          if (duel.status != DuelStatus.completed && duel.status != DuelStatus.cancelled) ...[
+          if (duel.status != DuelStatus.completed &&
+              duel.status != DuelStatus.cancelled) ...[
             const SizedBox(height: 24),
             SizedBox(
               width: double.infinity,
@@ -254,10 +288,15 @@ class _DuelDetailPageState extends ConsumerState<DuelDetailPage> {
                 style: OutlinedButton.styleFrom(
                   foregroundColor: AppColors.danger,
                   side: const BorderSide(color: AppColors.danger),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                child: const Text('Annuler le duel', style: TextStyle(fontWeight: FontWeight.w600)),
+                child: const Text(
+                  'Annuler le défi',
+                  style: TextStyle(fontWeight: FontWeight.w600),
+                ),
               ),
             ),
           ],
@@ -290,7 +329,11 @@ class _InfoRow extends StatelessWidget {
   final IconData icon;
   final String label;
   final bool highlight;
-  const _InfoRow({required this.icon, required this.label, this.highlight = false});
+  const _InfoRow({
+    required this.icon,
+    required this.label,
+    this.highlight = false,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -298,7 +341,11 @@ class _InfoRow extends StatelessWidget {
       padding: const EdgeInsets.only(top: 8),
       child: Row(
         children: [
-          Icon(icon, size: 16, color: highlight ? AppColors.accent : AppColors.textSecondary),
+          Icon(
+            icon,
+            size: 16,
+            color: highlight ? AppColors.accent : AppColors.textSecondary,
+          ),
           const SizedBox(width: 6),
           Text(
             label,
@@ -322,19 +369,42 @@ class _DuelStatusChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, bg, fg) = switch (duel.status) {
-      DuelStatus.pending   => ('En attente', AppColors.chipNeutralBg, AppColors.textSecondary),
-      DuelStatus.accepted  => ('Accepté', AppColors.chipAccentBg, AppColors.accent),
-      DuelStatus.active    => ('En cours', AppColors.accent, AppColors.surface),
-      DuelStatus.completed => duel.winnerId == currentUserId
-          ? ('Victoire ✓', AppColors.chipSuccessBg, AppColors.success)
-          : ('Défaite', AppColors.chipDangerBg, AppColors.danger),
-      DuelStatus.rejected  => ('Refusé', AppColors.chipNeutralBg, AppColors.textSecondary),
-      DuelStatus.cancelled => ('Annulé', AppColors.chipNeutralBg, AppColors.textSecondary),
+      DuelStatus.pending => (
+        'En attente',
+        AppColors.chipNeutralBg,
+        AppColors.textSecondary,
+      ),
+      DuelStatus.accepted => (
+        'Accepté',
+        AppColors.chipAccentBg,
+        AppColors.accent,
+      ),
+      DuelStatus.active => ('En cours', AppColors.accent, AppColors.surface),
+      DuelStatus.completed =>
+        duel.winnerId == currentUserId
+            ? ('Victoire ✓', AppColors.chipSuccessBg, AppColors.success)
+            : ('Défaite', AppColors.chipDangerBg, AppColors.danger),
+      DuelStatus.rejected => (
+        'Refusé',
+        AppColors.chipNeutralBg,
+        AppColors.textSecondary,
+      ),
+      DuelStatus.cancelled => (
+        'Annulé',
+        AppColors.chipNeutralBg,
+        AppColors.textSecondary,
+      ),
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
-      child: Text(label, style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: fg)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: fg),
+      ),
     );
   }
 }

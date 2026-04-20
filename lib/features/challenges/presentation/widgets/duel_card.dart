@@ -32,9 +32,8 @@ class DuelCard extends StatelessWidget {
       ),
       child: InkWell(
         borderRadius: BorderRadius.circular(16),
-        onTap: () => context.push(
-          Routes.duelDetail.replaceFirst(':id', duel.id),
-        ),
+        onTap: () =>
+            context.push(Routes.duelDetail.replaceFirst(':id', duel.id)),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
@@ -46,7 +45,7 @@ class DuelCard extends StatelessWidget {
                     _StatusChip(label: chipLabel, bg: chipBg, fg: chipFg),
                     const SizedBox(height: 6),
                     Text(
-                      'vs @$otherName',
+                      'Défi vs @$otherName',
                       style: const TextStyle(
                         fontWeight: FontWeight.w700,
                         fontSize: 16,
@@ -66,7 +65,11 @@ class DuelCard extends StatelessWidget {
                   ],
                 ),
               ),
-              const Icon(Icons.chevron_right, color: AppColors.textSecondary, size: 20),
+              const Icon(
+                Icons.chevron_right,
+                color: AppColors.textSecondary,
+                size: 20,
+              ),
             ],
           ),
         ),
@@ -78,8 +81,8 @@ class DuelCard extends StatelessWidget {
     switch (duel.status) {
       case DuelStatus.pending:
         return duel.challengerId == currentUserId
-            ? ('En attente', AppColors.chipNeutralBg, AppColors.textSecondary)
-            : ('Invitation reçue', AppColors.chipAccentBg, AppColors.accent);
+            ? ('Défi envoyé', AppColors.chipNeutralBg, AppColors.textSecondary)
+            : ('Invitation défi', AppColors.chipAccentBg, AppColors.accent);
       case DuelStatus.accepted:
         return ('Accepté', AppColors.chipAccentBg, AppColors.accent);
       case DuelStatus.active:
@@ -106,8 +109,14 @@ class _StatusChip extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration: BoxDecoration(color: bg, borderRadius: BorderRadius.circular(20)),
-      child: Text(label, style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: fg)),
+      decoration: BoxDecoration(
+        color: bg,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Text(
+        label,
+        style: TextStyle(fontSize: 11, fontWeight: FontWeight.w600, color: fg),
+      ),
     );
   }
 }

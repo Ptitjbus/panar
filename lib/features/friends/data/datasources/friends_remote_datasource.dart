@@ -12,6 +12,55 @@ class FriendsRemoteDataSource {
 
   FriendsRemoteDataSource(this._supabaseClient);
 
+  String _fallbackUsernameFor(String userId) {
+    final normalized = userId.replaceAll('-', '');
+    final suffix = normalized.length >= 12
+        ? normalized.substring(0, 12)
+        : normalized;
+    return 'user_$suffix';
+  }
+
+  Future<void> _ensureRequesterProfileExists(String requesterId) async {
+    final existing = await _supabaseClient
+        .from('profiles')
+        .select('id')
+        .eq('id', requesterId)
+        .maybeSingle();
+    if (existing != null) return;
+
+    final currentUser = _supabaseClient.auth.currentUser;
+    final metadataUsername = currentUser?.userMetadata?['username'] as String?;
+    final metadataEmail = currentUser?.email;
+    final emailPrefix = metadataEmail?.split('@').first;
+
+    final baseUsername =
+        (metadataUsername?.trim().isNotEmpty == true
+                ? metadataUsername!.trim()
+                : (emailPrefix?.trim().isNotEmpty == true
+                      ? emailPrefix!.trim()
+                      : _fallbackUsernameFor(requesterId)))
+            .replaceAll(RegExp(r'[^a-zA-Z0-9_]'), '_')
+            .toLowerCase();
+
+    try {
+      await _supabaseClient.from('profiles').insert({
+        'id': requesterId,
+        'username': baseUsername,
+      });
+    } on PostgrestException catch (e) {
+      // If the generated username already exists, retry with an ID-based suffix.
+      if (e.code == '23505') {
+        final retryUsername = '${baseUsername}_${requesterId.substring(0, 4)}';
+        await _supabaseClient.from('profiles').insert({
+          'id': requesterId,
+          'username': retryUsername,
+        });
+        return;
+      }
+      rethrow;
+    }
+  }
+
   /// Search users by username (case-insensitive) using RPC
   Future<List<ProfileModel>> searchUsersByUsername(String username) async {
     try {
@@ -35,6 +84,7 @@ class FriendsRemoteDataSource {
     required String addresseeId,
   }) async {
     try {
+      await _ensureRequesterProfileExists(requesterId);
       await _supabaseClient
           .from('friendships')
           .insert({
@@ -57,6 +107,11 @@ class FriendsRemoteDataSource {
       } else if (e.code == '42501') {
         // RLS policy violation
         throw const DatabaseFailure('Action non autorisée');
+      } else if (e.code == '23503' &&
+          e.message.contains('friendships_requester_id_fkey')) {
+        throw const DatabaseFailure(
+          'Ton profil n’est pas encore prêt. Réessaie dans quelques secondes.',
+        );
       }
       throw DatabaseFailure(e.message);
     } catch (e) {

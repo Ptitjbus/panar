@@ -18,4 +18,5 @@ class Routes {
   static const String groupChallenges = '/challenges/group';
   static const String createGroupChallenge = '/challenges/group/create';
   static const String groupChallengeDetail = '/challenges/group/:id';
+  static const String editAvatar = '/profile/edit-avatar';
 }

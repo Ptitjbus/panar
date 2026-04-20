@@ -13,6 +13,67 @@ class AuthRemoteDataSource {
 
   AuthRemoteDataSource(this._supabaseClient);
 
+  String _sanitizeUsername(String raw) {
+    final value = raw
+        .trim()
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9_]'), '_')
+        .replaceAll(RegExp(r'_+'), '_');
+    if (value.isEmpty) return 'user';
+    return value.length > 30 ? value.substring(0, 30) : value;
+  }
+
+  String _fallbackUsername(User user) {
+    final metadataUsername = user.userMetadata?['username'] as String?;
+    final metadataName = user.userMetadata?['full_name'] as String?;
+    final emailPrefix = (user.email ?? '').split('@').first;
+    final base =
+        (metadataUsername?.isNotEmpty == true
+                ? metadataUsername!
+                : metadataName?.isNotEmpty == true
+                ? metadataName!
+                : emailPrefix.isNotEmpty
+                ? emailPrefix
+                : 'user_${user.id.substring(0, 8)}')
+            .trim();
+    final sanitized = _sanitizeUsername(base);
+    if (sanitized.length < 3) {
+      return _sanitizeUsername('user_${user.id.substring(0, 8)}');
+    }
+    return sanitized;
+  }
+
+  Future<void> _ensureProfileExists(User user) async {
+    final existing = await _supabaseClient
+        .from('profiles')
+        .select('id')
+        .eq('id', user.id)
+        .maybeSingle();
+    if (existing != null) return;
+
+    final fullName = user.userMetadata?['full_name'] as String?;
+    var username = _fallbackUsername(user);
+
+    try {
+      await _supabaseClient.from('profiles').insert({
+        'id': user.id,
+        'username': username,
+        'full_name': fullName,
+      });
+    } on PostgrestException catch (e) {
+      if (e.code == '23505') {
+        username = _sanitizeUsername('${username}_${user.id.substring(0, 4)}');
+        await _supabaseClient.from('profiles').insert({
+          'id': user.id,
+          'username': username,
+          'full_name': fullName,
+        });
+        return;
+      }
+      rethrow;
+    }
+  }
+
   /// Get or initialize GoogleSignIn instance
   GoogleSignIn _getGoogleSignIn() {
     if (_googleSignIn != null) return _googleSignIn!;
@@ -37,6 +98,8 @@ class AuthRemoteDataSource {
         throw const AuthFailure('Failed to create account');
       }
 
+      await _ensureProfileExists(response.user!);
+
       return UserModel.fromSupabaseUser(response.user!);
     } on AuthException catch (e) {
       throw AuthFailure(e.message);
@@ -59,6 +122,8 @@ class AuthRemoteDataSource {
       if (response.user == null) {
         throw const AuthFailure('Failed to sign in');
       }
+
+      await _ensureProfileExists(response.user!);
 
       return UserModel.fromSupabaseUser(response.user!);
     } on AuthException catch (e) {
@@ -105,6 +170,8 @@ class AuthRemoteDataSource {
         throw const AuthFailure('Failed to sign in with Google');
       }
 
+      await _ensureProfileExists(response.user!);
+
       return UserModel.fromSupabaseUser(response.user!);
     } on AuthException catch (e) {
       throw AuthFailure(e.message);
@@ -134,7 +201,9 @@ class AuthRemoteDataSource {
   /// Get current authenticated user
   Future<UserModel?> getCurrentUser() async {
     final user = _supabaseClient.auth.currentUser;
-    return user != null ? UserModel.fromSupabaseUser(user) : null;
+    if (user == null) return null;
+    await _ensureProfileExists(user);
+    return UserModel.fromSupabaseUser(user);
   }
 
   /// Send password reset email
@@ -150,8 +219,11 @@ class AuthRemoteDataSource {
 
   /// Stream of auth state changes
   Stream<UserModel?> get authStateChanges {
-    return _supabaseClient.auth.onAuthStateChange.map((data) {
+    return _supabaseClient.auth.onAuthStateChange.asyncMap((data) async {
       final user = data.session?.user;
+      if (user != null) {
+        await _ensureProfileExists(user);
+      }
       return user != null ? UserModel.fromSupabaseUser(user) : null;
     });
   }

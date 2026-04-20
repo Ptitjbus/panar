@@ -29,40 +29,61 @@ import 'features/run/presentation/pages/run_reward_page.dart';
 import 'features/run/presentation/pages/run_stats_page.dart';
 import 'features/run/presentation/pages/run_tracking_page.dart';
 import 'features/onboarding/presentation/pages/onboarding_page.dart';
-import 'features/profile/presentation/providers/profile_provider.dart';
+import 'features/profile/presentation/pages/edit_avatar_page.dart';
+import 'features/profile/presentation/providers/profile_provider.dart'
+    show userProfileProvider, wizardCompleteProvider;
 import 'shared/layouts/main_layout.dart';
 import 'shared/providers/shared_preferences_provider.dart';
 import 'features/notifications/notification_setup_service.dart';
 import 'features/notifications/notification_handler.dart';
 
-/// Router provider
+// A simple ChangeNotifier that GoRouter uses to know when to re-evaluate
+// its redirect, without creating a new GoRouter instance.
+class _RouterRefreshNotifier extends ChangeNotifier {
+  void notify() => notifyListeners();
+}
+
+/// Router provider — GoRouter is created ONCE and never recreated.
+/// Auth/profile changes trigger a redirect re-evaluation via refreshListenable,
+/// which preserves widget state (e.g. PageView position in UsernameSetupPage).
 final routerProvider = Provider<GoRouter>((ref) {
-  final authState = ref.watch(authStateProvider);
-  final profileAsync = ref.watch(userProfileProvider);
   final prefs = ref.watch(sharedPreferencesProvider);
   final firebaseAnalytics = ref.watch(firebaseAnalyticsProvider);
 
-  return GoRouter(
+  final refreshNotifier = _RouterRefreshNotifier();
+
+  // Listen to auth and profile changes → notify GoRouter to re-evaluate redirect
+  ref.listen(authStateProvider, (_, _) => refreshNotifier.notify());
+  ref.listen(userProfileProvider, (_, _) => refreshNotifier.notify());
+  ref.listen(wizardCompleteProvider, (_, _) => refreshNotifier.notify());
+
+  final router = GoRouter(
     initialLocation: Routes.home,
+    refreshListenable: refreshNotifier,
     observers: [
       appRouteObserver,
       FirebaseAnalyticsObserver(analytics: firebaseAnalytics),
     ],
     redirect: (context, state) {
-      // Get onboarding status from SharedPreferences (synchronous)
+      // Read current values at redirect-evaluation time (not reactive)
+      final authState = ref.read(authStateProvider);
+      final profileAsync = ref.read(userProfileProvider);
+
       final hasSeenOnboarding =
           prefs.getBool(AppConstants.hasCompletedOnboardingKey) ?? false;
 
-      // Get auth state
       final user = authState.value;
       final isLoggedIn = user != null;
 
-      // Get profile to check username
-      String? username;
-      bool isProfileLoading = profileAsync.isLoading;
+      // wizardCompleteProvider is set to true at the very start of _finish()
+      // to prevent router redirect loops while the DB write is in-flight.
+      final wizardComplete = ref.read(wizardCompleteProvider);
+
+      bool hasCompletedOnboarding = false;
+      final isProfileLoading = profileAsync.isLoading;
 
       profileAsync.whenData((profile) {
-        username = profile?.username;
+        hasCompletedOnboarding = profile?.hasCompletedOnboarding ?? false;
       });
 
       final location = state.matchedLocation;
@@ -80,24 +101,21 @@ final routerProvider = Provider<GoRouter>((ref) {
         return Routes.login;
       }
 
-      // If logged in, wait for profile to load before deciding on username setup
+      // Wait for profile to load before deciding
       if (isLoggedIn && isProfileLoading) {
-        return null; // Stay where we are until we know if we need setup
+        return null;
       }
 
-      // Logged in but no username (or temporary username) → username setup
-      final needsUsernameSetup =
-          username == null || (username?.startsWith('user_') ?? false);
+      // If the wizard was just completed locally OR confirmed in DB → no redirect to setup
+      final needsUsernameSetup = !wizardComplete && !hasCompletedOnboarding;
       if (isLoggedIn &&
           needsUsernameSetup &&
           location != Routes.usernameSetup) {
         return Routes.usernameSetup;
       }
 
-      // Logged in with username → prevent access to auth pages
-      final hasValidUsername =
-          username != null && !(username?.startsWith('user_') ?? true);
-      if (isLoggedIn && hasValidUsername) {
+      // Fully done → prevent access to auth/setup pages
+      if (isLoggedIn && (wizardComplete || hasCompletedOnboarding)) {
         if (location == Routes.login ||
             location == Routes.signup ||
             location == Routes.onboarding ||
@@ -106,7 +124,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         }
       }
 
-      return null; // No redirect needed
+      return null;
     },
     routes: [
       GoRoute(
@@ -182,7 +200,10 @@ final routerProvider = Provider<GoRouter>((ref) {
       ),
       GoRoute(
         path: Routes.createDuel,
-        builder: (context, state) => const CreateDuelPage(),
+        builder: (context, state) {
+          final extra = state.extra as Map<String, dynamic>?;
+          return CreateDuelPage(initialFriendId: extra?['friendId'] as String?);
+        },
       ),
       GoRoute(
         path: Routes.duelDetail,
@@ -213,8 +234,19 @@ final routerProvider = Provider<GoRouter>((ref) {
           return GroupChallengeDetailPage(challengeId: id);
         },
       ),
+      GoRoute(
+        path: Routes.editAvatar,
+        builder: (context, state) => const EditAvatarPage(),
+      ),
     ],
   );
+
+  ref.onDispose(() {
+    router.dispose();
+    refreshNotifier.dispose();
+  });
+
+  return router;
 });
 
 class MyApp extends ConsumerWidget {
@@ -225,19 +257,20 @@ class MyApp extends ConsumerWidget {
     final router = ref.watch(routerProvider);
     ref.watch(experimentsBootstrapProvider);
 
-    // Initialiser les notifications dès que l'utilisateur se connecte
     ref.listen(authStateProvider, (previous, next) {
       final wasLoggedIn = previous?.valueOrNull != null;
       final isLoggedIn = next.valueOrNull != null;
       final analyticsService = ref.read(analyticsServiceProvider);
 
       if (!wasLoggedIn && isLoggedIn) {
+        ref.read(wizardCompleteProvider.notifier).state = false;
         unawaited(analyticsService.setUserId(next.valueOrNull?.id));
-        NotificationSetupService.initialize();
+        NotificationSetupService.initialize(requestPermission: false);
         NotificationHandler.initialize(ref);
       }
 
       if (wasLoggedIn && !isLoggedIn) {
+        ref.read(wizardCompleteProvider.notifier).state = false;
         unawaited(analyticsService.setUserId(null));
       }
     });

@@ -3,7 +3,6 @@ import '../../domain/entities/profile_entity.dart';
 import '../../domain/repositories/profile_repository.dart';
 import '../datasources/profile_remote_datasource.dart';
 
-/// Implementation of ProfileRepository using ProfileRemoteDataSource
 class ProfileRepositoryImpl implements ProfileRepository {
   final ProfileRemoteDataSource _profileRemoteDataSource;
 
@@ -26,8 +25,40 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
-  Future<void> markOnboardingComplete(String userId) async {
-    await _profileRemoteDataSource.markOnboardingComplete(userId);
+  Future<void> markOnboardingComplete(
+    String userId, {
+    String? avatarColor,
+  }) async {
+    await _profileRemoteDataSource.markOnboardingComplete(
+      userId,
+      avatarColor: avatarColor,
+    );
+  }
+
+  @override
+  Future<void> updateOnboardingProgress({
+    required String userId,
+    int? onboardingActivityIndex,
+    int? onboardingTimeIndex,
+    bool? onboardingUsernameDone,
+    bool? onboardingLocationPermissionGranted,
+    bool? onboardingNotificationsPermissionGranted,
+    bool? onboardingAvatarDone,
+    String? avatarColor,
+    bool? hasCompletedOnboarding,
+  }) async {
+    await _profileRemoteDataSource.updateOnboardingProgress(
+      userId: userId,
+      onboardingActivityIndex: onboardingActivityIndex,
+      onboardingTimeIndex: onboardingTimeIndex,
+      onboardingUsernameDone: onboardingUsernameDone,
+      onboardingLocationPermissionGranted: onboardingLocationPermissionGranted,
+      onboardingNotificationsPermissionGranted:
+          onboardingNotificationsPermissionGranted,
+      onboardingAvatarDone: onboardingAvatarDone,
+      avatarColor: avatarColor,
+      hasCompletedOnboarding: hasCompletedOnboarding,
+    );
   }
 
   @override
@@ -35,16 +66,17 @@ class ProfileRepositoryImpl implements ProfileRepository {
     required String userId,
     String? fullName,
     String? avatarUrl,
+    String? avatarColor,
   }) async {
     await _profileRemoteDataSource.updateProfile(
       userId: userId,
       fullName: fullName,
       avatarUrl: avatarUrl,
+      avatarColor: avatarColor,
     );
   }
 }
 
-/// Provider for ProfileRepository
 final profileRepositoryProvider = Provider<ProfileRepository>((ref) {
   final profileRemoteDataSource = ref.watch(profileRemoteDataSourceProvider);
   return ProfileRepositoryImpl(profileRemoteDataSource);

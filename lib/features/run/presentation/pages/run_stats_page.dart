@@ -1,56 +1,61 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/route_constants.dart';
-import '../../../../shared/widgets/custom_button.dart';
 import '../../../../shared/widgets/loading_indicator.dart';
+import '../../../../shared/widgets/panar_breadcrumb.dart';
+import '../../../../shared/widgets/panar_button.dart';
 import '../providers/run_history_provider.dart';
 import '../providers/run_tracking_provider.dart';
-import '../widgets/run_metric_card.dart';
 import '../widgets/run_static_map_widget.dart';
 
-class RunStatsPage extends ConsumerWidget {
+class RunStatsPage extends ConsumerStatefulWidget {
   final String activityId;
 
   const RunStatsPage({super.key, required this.activityId});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final detailAsync = ref.watch(runActivityDetailProvider(activityId));
+  ConsumerState<RunStatsPage> createState() => _RunStatsPageState();
+}
+
+class _RunStatsPageState extends ConsumerState<RunStatsPage>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
+
+  @override
+  void dispose() {
+    _tabController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final detailAsync = ref.watch(runActivityDetailProvider(widget.activityId));
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Résumé de la course'),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back),
-          onPressed: () {
-            ref.read(runTrackingProvider.notifier).resetRun();
-            context.go(Routes.home);
-          },
-        ),
-      ),
+      backgroundColor: AppColors.background,
       body: detailAsync.when(
         loading: () => const LoadingIndicator(),
         error: (error, _) => Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(
-                Icons.error_outline,
-                size: 48,
-                color: theme.colorScheme.error,
-              ),
+              const Icon(Icons.error_outline, size: 48, color: AppColors.danger),
               const SizedBox(height: 16),
-              Text(
-                'Erreur lors du chargement',
-                style: theme.textTheme.titleMedium,
-              ),
+              Text('Erreur lors du chargement', style: theme.textTheme.titleMedium),
               const SizedBox(height: 8),
               TextButton(
-                onPressed: () =>
-                    ref.invalidate(runActivityDetailProvider(activityId)),
+                onPressed: () => ref.invalidate(runActivityDetailProvider(widget.activityId)),
                 child: const Text('Réessayer'),
               ),
             ],
@@ -60,65 +65,102 @@ class RunStatsPage extends ConsumerWidget {
           final activity = detail.activity;
           final points = detail.points;
 
-          final dateStr = _formatDate(activity.startedAt);
-
-          return SingleChildScrollView(
-            padding: const EdgeInsets.all(16),
+          return SafeArea(
             child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                // Carte de tracé
-                RunStaticMapWidget(points: points),
-
-                const SizedBox(height: 24),
-
-                // Stats
-                Row(
-                  children: [
-                    Expanded(
-                      child: RunMetricCard(
-                        label: 'DISTANCE',
-                        value: activity.formattedDistance.replaceAll(' km', ''),
-                        unit: 'km',
-                      ),
-                    ),
-                    Expanded(
-                      child: RunMetricCard(
-                        label: 'DURÉE',
-                        value: activity.formattedDuration,
-                        unit: 'mm:ss',
-                      ),
-                    ),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                  child: const PanarBreadcrumb('Récapitulatif'),
                 ),
-                const SizedBox(height: 8),
-                Row(
-                  children: [
-                    Expanded(
-                      child: RunMetricCard(
-                        label: 'ALLURE',
-                        value: activity.formattedPace.replaceAll(' /km', ''),
-                        unit: '/km',
-                      ),
-                    ),
-                    Expanded(
-                      child: RunMetricCard(
-                        label: 'DATE',
-                        value: dateStr,
-                        unit: '',
-                      ),
-                    ),
-                  ],
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                  child: Text('Places aux\nchiffres !', style: theme.textTheme.displaySmall),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+                  child: Text('Parlons peu parlons bien...', style: theme.textTheme.bodyMedium),
                 ),
 
-                const SizedBox(height: 32),
+                // Tabs
+                TabBar(
+                  controller: _tabController,
+                  labelColor: AppColors.textPrimary,
+                  unselectedLabelColor: AppColors.textSecondary,
+                  indicatorColor: AppColors.textPrimary,
+                  indicatorSize: TabBarIndicatorSize.label,
+                  labelStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
+                  unselectedLabelStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w400),
+                  tabs: const [Tab(text: 'Donnée'), Tab(text: 'Parcours')],
+                ),
 
-                CustomButton(
-                  text: "Retour à l'accueil",
-                  onPressed: () {
-                    ref.read(runTrackingProvider.notifier).resetRun();
-                    context.go(Routes.home);
-                  },
+                Expanded(
+                  child: TabBarView(
+                    controller: _tabController,
+                    children: [
+                      // Données tab
+                      SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(20, 32, 20, 32),
+                        child: Column(
+                          children: [
+                            _BigStat(
+                              value: activity.formattedDuration,
+                              label: 'Temps',
+                            ),
+                            const SizedBox(height: 32),
+                            _BigStat(
+                              value: activity.formattedDistance.replaceAll(' km', ''),
+                              label: 'Kilomètres',
+                            ),
+                            const SizedBox(height: 32),
+                            _BigStat(
+                              value: activity.formattedPace.replaceAll(' /km', ''),
+                              label: 'Min/Km',
+                            ),
+                            const SizedBox(height: 48),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: PanarButton(
+                                    label: 'Partager',
+                                    onPressed: () {},
+                                  ),
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: PanarButton.black(
+                                    label: 'Continuer',
+                                    onPressed: () {
+                                      ref.read(runTrackingProvider.notifier).resetRun();
+                                      context.go(Routes.home);
+                                    },
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ],
+                        ),
+                      ),
+
+                      // Parcours tab
+                      Padding(
+                        padding: const EdgeInsets.all(20),
+                        child: Column(
+                          children: [
+                            Expanded(child: RunStaticMapWidget(points: points)),
+                            const SizedBox(height: 20),
+                            PanarButton.black(
+                              label: "Retour à l'accueil",
+                              onPressed: () {
+                                ref.read(runTrackingProvider.notifier).resetRun();
+                                context.go(Routes.home);
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
               ],
             ),
@@ -127,23 +169,30 @@ class RunStatsPage extends ConsumerWidget {
       ),
     );
   }
+}
 
-  String _formatDate(DateTime date) {
-    const months = [
-      '',
-      'jan.',
-      'fév.',
-      'mar.',
-      'avr.',
-      'mai',
-      'juin',
-      'juil.',
-      'août',
-      'sep.',
-      'oct.',
-      'nov.',
-      'déc.',
-    ];
-    return '${date.day} ${months[date.month]}';
+class _BigStat extends StatelessWidget {
+  final String value;
+  final String label;
+
+  const _BigStat({required this.value, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: GoogleFonts.londrinaSolid(
+            fontSize: 72,
+            fontWeight: FontWeight.w900,
+            color: AppColors.textPrimary,
+            height: 1,
+          ),
+        ),
+        const SizedBox(height: 4),
+        Text(label, style: Theme.of(context).textTheme.titleMedium),
+      ],
+    );
   }
 }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/constants/app_colors.dart';
 import '../../../profile/domain/entities/profile_entity.dart';
 import '../providers/friends_provider.dart';
 
@@ -112,81 +113,93 @@ class _FriendSearchDialogState extends ConsumerState<FriendSearchDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final hasQuery = _searchController.text.trim().isNotEmpty;
+
     return Dialog(
-      child: Container(
-        constraints: const BoxConstraints(maxHeight: 500),
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            // Header
-            Row(
-              children: [
-                const Text(
-                  'Rechercher un ami',
-                  style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-                const Spacer(),
-                IconButton(
-                  icon: const Icon(Icons.close),
-                  onPressed: () => Navigator.of(context).pop(),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-
-            // Search field
-            TextField(
-              controller: _searchController,
-              onChanged: _onSearchChanged,
-              decoration: InputDecoration(
-                hintText: 'Nom d\'utilisateur (min. 3 caractères)',
-                prefixIcon: const Icon(Icons.search),
-                suffixIcon: _searchController.text.isNotEmpty
-                    ? IconButton(
-                        icon: const Icon(Icons.clear),
-                        onPressed: () {
-                          _searchController.clear();
-                          _onSearchChanged('');
-                        },
-                      )
-                    : null,
-                border: const OutlineInputBorder(),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+      backgroundColor: AppColors.background,
+      child: ConstrainedBox(
+        constraints: const BoxConstraints(maxHeight: 560),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 18, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Text('Ajouter un ami', style: theme.textTheme.headlineSmall),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close),
+                    color: AppColors.textPrimary,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ],
               ),
-              autofocus: true,
-            ),
-            const SizedBox(height: 16),
-
-            // Results
-            Flexible(child: _buildResults()),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                'Trouve un utilisateur par son pseudo.',
+                style: theme.textTheme.bodyMedium,
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: _searchController,
+                onChanged: _onSearchChanged,
+                decoration: InputDecoration(
+                  hintText: '@pseudo (min. 3 caractères)',
+                  prefixIcon: const Icon(
+                    Icons.search_rounded,
+                    color: AppColors.textSecondary,
+                  ),
+                  suffixIcon: hasQuery
+                      ? IconButton(
+                          icon: const Icon(Icons.clear),
+                          color: AppColors.textSecondary,
+                          onPressed: () {
+                            _searchController.clear();
+                            _onSearchChanged('');
+                          },
+                        )
+                      : null,
+                ),
+                autofocus: true,
+              ),
+              const SizedBox(height: 14),
+              Flexible(child: _buildResults(theme)),
+            ],
+          ),
         ),
       ),
     );
   }
 
-  Widget _buildResults() {
-    // Loading state
+  Widget _buildResults(ThemeData theme) {
     if (_isSearching) {
-      return const Center(child: CircularProgressIndicator());
+      return const Center(
+        child: CircularProgressIndicator(color: AppColors.textPrimary),
+      );
     }
 
-    // Error state
     if (_errorMessage != null) {
       return Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            const Icon(Icons.error_outline, size: 48, color: Colors.red),
+            const Icon(Icons.error_outline, size: 44, color: AppColors.danger),
             const SizedBox(height: 16),
-            Text(_errorMessage!, style: const TextStyle(color: Colors.red)),
+            Text(
+              _errorMessage!,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.danger,
+              ),
+            ),
           ],
         ),
       );
     }
 
-    // Empty state
     if (_searchResults.isEmpty) {
       final hasSearched = _searchController.text.trim().length >= 3;
       return Center(
@@ -196,14 +209,14 @@ class _FriendSearchDialogState extends ConsumerState<FriendSearchDialog> {
             Icon(
               hasSearched ? Icons.person_search : Icons.search,
               size: 48,
-              color: Colors.grey,
+              color: AppColors.textSecondary,
             ),
             const SizedBox(height: 16),
             Text(
               hasSearched
                   ? 'Aucun utilisateur trouvé'
                   : 'Recherchez un utilisateur par son nom',
-              style: const TextStyle(color: Colors.grey),
+              style: theme.textTheme.bodyMedium,
               textAlign: TextAlign.center,
             ),
           ],
@@ -211,48 +224,81 @@ class _FriendSearchDialogState extends ConsumerState<FriendSearchDialog> {
       );
     }
 
-    // Results list
-    return ListView.builder(
-      shrinkWrap: true,
+    return ListView.separated(
       itemCount: _searchResults.length,
+      separatorBuilder: (_, _) => const SizedBox(height: 8),
       itemBuilder: (context, index) {
         final user = _searchResults[index];
         final isSending = _sendingRequests.contains(user.id);
 
-        return ListTile(
-          leading: CircleAvatar(
-            backgroundImage: user.avatarUrl != null
-                ? NetworkImage(user.avatarUrl!)
-                : null,
-            onBackgroundImageError: user.avatarUrl != null
-                ? (exception, stackTrace) {
-                    // Silently fail, will show child (initials)
-                  }
-                : null,
-            child: (user.avatarUrl == null)
-                ? Text(user.username[0].toUpperCase())
-                : null,
+        return Container(
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(14),
           ),
-          title: Text('@${user.username}'),
-          subtitle: user.fullName != null ? Text(user.fullName!) : null,
-          trailing: ElevatedButton(
-            onPressed: isSending
-                ? null
-                : () => _sendFriendRequest(user.id, user.username),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Theme.of(context).colorScheme.primary,
-              foregroundColor: Theme.of(context).colorScheme.onPrimary,
+          child: ListTile(
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 12,
+              vertical: 4,
             ),
-            child: isSending
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Text('Ajouter'),
+            leading: CircleAvatar(
+              backgroundColor: AppColors.surfaceDark,
+              backgroundImage: user.avatarUrl != null
+                  ? NetworkImage(user.avatarUrl!)
+                  : null,
+              onBackgroundImageError: user.avatarUrl != null
+                  ? (exception, stackTrace) {}
+                  : null,
+              child: user.avatarUrl == null
+                  ? Text(
+                      user.username[0].toUpperCase(),
+                      style: theme.textTheme.labelMedium,
+                    )
+                  : null,
+            ),
+            title: Text(
+              '@${user.username}',
+              style: theme.textTheme.titleSmall?.copyWith(
+                color: AppColors.textPrimary,
+              ),
+            ),
+            subtitle: user.fullName != null
+                ? Text(user.fullName!, style: theme.textTheme.bodySmall)
+                : null,
+            trailing: SizedBox(
+              width: 96,
+              height: 36,
+              child: ElevatedButton(
+                onPressed: isSending
+                    ? null
+                    : () => _sendFriendRequest(user.id, user.username),
+                style: ElevatedButton.styleFrom(
+                  padding: EdgeInsets.zero,
+                  elevation: 0,
+                  backgroundColor: AppColors.textPrimary,
+                  foregroundColor: Colors.white,
+                  disabledBackgroundColor: AppColors.surfaceDark,
+                  disabledForegroundColor: AppColors.textSecondary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  textStyle: theme.textTheme.labelMedium?.copyWith(
+                    color: Colors.white,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                child: isSending
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: Colors.white,
+                        ),
+                      )
+                    : const Text('Ajouter'),
+              ),
+            ),
           ),
         );
       },

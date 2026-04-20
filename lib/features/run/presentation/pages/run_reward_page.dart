@@ -2,13 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/route_constants.dart';
-import '../../../../shared/widgets/custom_button.dart';
+import '../../../../shared/widgets/panar_breadcrumb.dart';
+import '../../../../shared/widgets/panar_button.dart';
 import '../../../challenges/domain/entities/duel_entity.dart';
 import '../../../challenges/presentation/providers/duel_provider.dart';
 import '../../../challenges/presentation/providers/group_challenge_provider.dart';
 import '../providers/run_tracking_provider.dart';
-import '../widgets/run_metric_card.dart';
 import '../widgets/treasure_chest_widget.dart';
 
 class RunRewardPage extends ConsumerStatefulWidget {
@@ -34,7 +35,6 @@ class _RunRewardPageState extends ConsumerState<RunRewardPage> {
   }
 
   Future<void> _autoLinkActivity(String activityId) async {
-    // Link to active duel if any
     final duelState = ref.read(duelNotifierProvider);
     final activeDuel = duelState.myDuels
         .where((d) => d.isActive || d.status == DuelStatus.accepted)
@@ -45,7 +45,6 @@ class _RunRewardPageState extends ConsumerState<RunRewardPage> {
           .linkActivityToDuel(activeDuel.id, activityId);
     }
 
-    // Add distance to active group challenges
     final gcState = ref.read(groupChallengeNotifierProvider);
     final distanceMeters = ref.read(runTrackingProvider).distanceMeters;
     for (final challenge in gcState.myChallenges.where((c) => c.isActive)) {
@@ -66,130 +65,96 @@ class _RunRewardPageState extends ConsumerState<RunRewardPage> {
     final theme = Theme.of(context);
 
     return Scaffold(
+      backgroundColor: AppColors.background,
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              // Titre
-              Text(
-                'Course terminée !',
-                style: theme.textTheme.headlineMedium?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 4),
-              Text(
-                'Voici vos statistiques',
-                style: theme.textTheme.bodyMedium?.copyWith(
-                  color: theme.colorScheme.onSurfaceVariant,
-                ),
-                textAlign: TextAlign.center,
-              ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+              child: const PanarBreadcrumb('Récompenses'),
+            ),
 
-              const SizedBox(height: 28),
-
-              // Métriques
-              Row(
-                children: [
-                  Expanded(
-                    child: RunMetricCard(
-                      label: 'DISTANCE',
-                      value: runState.formattedDistance,
-                      unit: 'km',
+            Expanded(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Big celebration title
+                    Text(
+                      _chestOpened
+                          ? 'OUVERT !\nBRAVO !'
+                          : 'BRAVO\nCHAMPION',
+                      style: theme.textTheme.displayMedium,
                     ),
-                  ),
-                  Expanded(
-                    child: RunMetricCard(
-                      label: 'DURÉE',
-                      value: runState.formattedDuration,
-                      unit: 'mm:ss',
+                    const SizedBox(height: 8),
+                    Text(
+                      _chestOpened
+                          ? 'Voici tes récompenses'
+                          : 'Découvre tes récompenses',
+                      style: theme.textTheme.bodyLarge?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
                     ),
-                  ),
-                  Expanded(
-                    child: RunMetricCard(
-                      label: 'ALLURE',
-                      value: runState.formattedPace,
-                      unit: '/km',
+                    const SizedBox(height: 40),
+
+                    // Chest widget
+                    Center(
+                      child: GestureDetector(
+                        onTap: _openChest,
+                        child: TreasureChestWidget(
+                          isOpen: _chestOpened,
+                          petons: runState.petonEarned,
+                        ),
+                      ),
                     ),
-                  ),
-                ],
+
+                    if (!_chestOpened) ...[
+                      const SizedBox(height: 16),
+                      Text(
+                        'Appuie sur la boîte pour ouvrir',
+                        style: theme.textTheme.bodySmall,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+
+                    if (_chestOpened && runState.newPetonsBalance != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        'Solde total : ${runState.newPetonsBalance} 💡',
+                        style: theme.textTheme.bodyMedium,
+                        textAlign: TextAlign.center,
+                      ),
+                    ],
+
+                    const SizedBox(height: 48),
+
+                    if (widget.activityId != null)
+                      PanarButton(
+                        label: 'Voir mes stats',
+                        onPressed: () => context.go(
+                          Routes.runStats,
+                          extra: {'activityId': widget.activityId},
+                        ),
+                      ),
+
+                    if (widget.activityId != null) const SizedBox(height: 12),
+
+                    PanarButton.black(
+                      label: "Retour à l'accueil",
+                      onPressed: () {
+                        ref.read(runTrackingProvider.notifier).resetRun();
+                        context.go(Routes.home);
+                      },
+                    ),
+                  ],
+                ),
               ),
-
-              const SizedBox(height: 40),
-
-              // Section coffre
-              Text(
-                _chestOpened ? 'Vous avez gagné !' : 'Ouvrez votre récompense',
-                style: theme.textTheme.titleLarge?.copyWith(
-                  fontWeight: FontWeight.bold,
-                ),
-                textAlign: TextAlign.center,
-              ),
-              const SizedBox(height: 24),
-
-              // Coffre animé
-              Center(
-                child: GestureDetector(
-                  onTap: _openChest,
-                  child: TreasureChestWidget(
-                    isOpen: _chestOpened,
-                    petons: runState.petonEarned,
-                  ),
-                ),
-              ),
-
-              if (!_chestOpened) ...[
-                const SizedBox(height: 12),
-                Text(
-                  'Appuyez sur le coffre pour l\'ouvrir',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-
-              if (_chestOpened && runState.newPetonsBalance != null) ...[
-                const SizedBox(height: 8),
-                Text(
-                  'Solde total : ${runState.newPetonsBalance} petons',
-                  style: theme.textTheme.bodySmall?.copyWith(
-                    color: theme.colorScheme.onSurfaceVariant,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-              ],
-
-              const SizedBox(height: 36),
-
-              if (activityId != null)
-                CustomButton(
-                  text: 'Voir mes stats détaillées',
-                  onPressed: () => context.go(
-                    Routes.runStats,
-                    extra: {'activityId': widget.activityId},
-                  ),
-                ),
-
-              const SizedBox(height: 12),
-
-              CustomButton(
-                text: "Retour à l'accueil",
-                isOutlined: true,
-                onPressed: () {
-                  ref.read(runTrackingProvider.notifier).resetRun();
-                  context.go(Routes.home);
-                },
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
       ),
     );
   }
-
-  String? get activityId => widget.activityId;
 }

@@ -1,23 +1,21 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../../../auth/presentation/providers/auth_provider.dart';
-import '../../../home/presentation/providers/avatar_provider.dart';
-import '../../../home/domain/entities/avatar_mood.dart';
-import '../../../profile/presentation/providers/profile_provider.dart';
-import '../../../../shared/widgets/animated_avatar_widget.dart';
+import 'package:go_router/go_router.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:intl/intl.dart';
 
-const _kAvatarPalette = <String>[
-  '#FF6B6B',
-  '#4ECDC4',
-  '#45B7D1',
-  '#FFA07A',
-  '#98D8C8',
-  '#F7DC6F',
-  '#BB8FCE',
-  '#85C1E2',
-  '#00A8E8',
-  '#FF8FAB',
-];
+import '../../../../core/constants/app_colors.dart';
+import '../../../../core/constants/route_constants.dart';
+import '../../../../shared/widgets/animated_avatar_widget.dart';
+import '../../../../shared/widgets/panar_breadcrumb.dart';
+import '../../../../shared/widgets/panar_button.dart';
+import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../friends/presentation/widgets/friend_list_item.dart';
+import '../../../friends/presentation/providers/friends_provider.dart';
+import '../../../home/domain/entities/avatar_mood.dart';
+import '../../../home/presentation/providers/avatar_provider.dart';
+import '../../../profile/presentation/providers/profile_provider.dart';
+import '../../../shop/presentation/providers/shop_provider.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -26,51 +24,20 @@ class ProfilePage extends ConsumerStatefulWidget {
   ConsumerState<ProfilePage> createState() => _ProfilePageState();
 }
 
-class _ProfilePageState extends ConsumerState<ProfilePage> {
-  final TextEditingController _displayNameController = TextEditingController();
-  String? _selectedColorHex;
-  String? _initializedAvatarId;
+class _ProfilePageState extends ConsumerState<ProfilePage>
+    with SingleTickerProviderStateMixin {
+  late final TabController _tabController;
+
+  @override
+  void initState() {
+    super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+  }
 
   @override
   void dispose() {
-    _displayNameController.dispose();
+    _tabController.dispose();
     super.dispose();
-  }
-
-  Color _parseColor(String? colorHex) {
-    if (colorHex == null) return const Color(0xFF4ECDC4);
-    try {
-      return Color(int.parse(colorHex.replaceFirst('#', '0xFF')));
-    } catch (_) {
-      return const Color(0xFF4ECDC4);
-    }
-  }
-
-  Future<void> _saveAvatar() async {
-    final user = ref.read(authStateProvider).value;
-    final avatar = ref.read(userAvatarProvider).valueOrNull;
-    if (user == null || avatar == null) return;
-
-    final success = await ref
-        .read(avatarCustomizationNotifierProvider.notifier)
-        .updateAvatar(
-          userId: user.id,
-          displayName: _displayNameController.text.trim(),
-          colorHex: _selectedColorHex,
-        );
-
-    if (!mounted) return;
-    final messenger = ScaffoldMessenger.of(context);
-    if (success) {
-      messenger.showSnackBar(
-        const SnackBar(content: Text('Avatar mis a jour')),
-      );
-    } else {
-      final error = ref.read(avatarCustomizationNotifierProvider).errorMessage;
-      messenger.showSnackBar(
-        SnackBar(content: Text(error ?? 'Erreur de mise a jour')),
-      );
-    }
   }
 
   @override
@@ -79,154 +46,358 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     final profileAsync = ref.watch(userProfileProvider);
     final avatarAsync = ref.watch(userAvatarProvider);
     final moodAsync = ref.watch(userAvatarMoodProvider);
-    final avatarEditState = ref.watch(avatarCustomizationNotifierProvider);
+    final theme = Theme.of(context);
 
     final avatar = avatarAsync.valueOrNull;
-    if (avatar != null && _initializedAvatarId != avatar.id) {
-      _initializedAvatarId = avatar.id;
-      _displayNameController.text = avatar.displayName ?? '';
-      _selectedColorHex = avatar.colorHex;
-    }
+    final mood = moodAsync.valueOrNull ?? AvatarMood.neutral;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Profil')),
+      backgroundColor: AppColors.background,
       body: authState.when(
+        loading: () => const Center(child: CircularProgressIndicator()),
+        error: (e, _) => Center(child: Text('Erreur: $e')),
         data: (user) {
-          if (user == null) {
-            return const Center(child: Text('Utilisateur non connecte'));
-          }
+          if (user == null) return const Center(child: Text('Non connecté'));
+
           return profileAsync.when(
             loading: () => const Center(child: CircularProgressIndicator()),
-            error: (error, stack) => Center(child: Text('Erreur profil: $error')),
+            error: (e, _) => Center(child: Text('Erreur profil: $e')),
             data: (profile) {
-              return avatarAsync.when(
-                loading: () => const Center(child: CircularProgressIndicator()),
-                error: (error, stack) => Center(child: Text('Erreur avatar: $error')),
-                data: (avatarData) {
-                  if (profile == null || avatarData == null) {
-                    return const Center(child: Text('Profil indisponible'));
-                  }
+              final metadataUsername =
+                  user.userMetadata?['username'] as String? ?? '';
+              final emailPrefix = user.email.split('@').first;
+              final username =
+                  (profile?.username ?? metadataUsername).trim().isNotEmpty
+                  ? (profile?.username ?? metadataUsername).trim()
+                  : emailPrefix;
+              final displayName =
+                  (avatar?.displayName ?? profile?.fullName ?? username).trim();
+              final avatarColorHex = avatar?.colorHex ?? profile?.avatarColor;
 
-                  final mood = moodAsync.valueOrNull ?? AvatarMood.neutral;
-                  final currentColor = _parseColor(_selectedColorHex ?? avatarData.colorHex);
+              return SafeArea(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
+                      child: Row(
+                        children: [
+                          const PanarBreadcrumb('Mon profil'),
+                          const Spacer(),
+                          Icon(
+                            Icons.settings_outlined,
+                            color: AppColors.textSecondary,
+                            size: 22,
+                          ),
+                        ],
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
+                      child: Text(
+                        'Bienvenue chez toi !',
+                        style: theme.textTheme.headlineLarge,
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
+                      child: Text(
+                        'Ici tu retrouves tes courses, ton peton...',
+                        style: theme.textTheme.bodyMedium,
+                      ),
+                    ),
 
-                  return ListView(
-                    padding: const EdgeInsets.all(20),
-                    children: [
-                      Center(
-                        child: Column(
-                          children: [
-                            AnimatedAvatarWidget(
-                              isMoving: false,
-                              size: 140,
-                              colorFilter: currentColor,
-                              showShadow: true,
-                            ),
-                            const SizedBox(height: 12),
-                            Text(
-                              '${mood.emoji} ${mood.label}',
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              '@${profile.username}',
-                              style: const TextStyle(
-                                fontSize: 15,
-                                color: Colors.black54,
-                              ),
-                            ),
-                            Text(
-                              user.email,
-                              style: const TextStyle(color: Colors.black54),
-                            ),
-                          ],
-                        ),
+                    TabBar(
+                      controller: _tabController,
+                      labelColor: AppColors.textPrimary,
+                      unselectedLabelColor: AppColors.textSecondary,
+                      indicatorColor: AppColors.textPrimary,
+                      indicatorSize: TabBarIndicatorSize.label,
+                      labelStyle: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600,
                       ),
-                      const SizedBox(height: 28),
-                      const Text(
-                        'Nom du personnage',
-                        style: TextStyle(fontWeight: FontWeight.w700),
+                      unselectedLabelStyle: GoogleFonts.inter(
+                        fontSize: 15,
+                        fontWeight: FontWeight.w400,
                       ),
-                      const SizedBox(height: 8),
-                      TextField(
-                        controller: _displayNameController,
-                        decoration: InputDecoration(
-                          hintText: 'Ex: Bolt',
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      tabs: const [
+                        Tab(text: 'Profil'),
+                        Tab(text: 'Mes activités'),
+                      ],
+                    ),
+
+                    Expanded(
+                      child: TabBarView(
+                        controller: _tabController,
+                        children: [
+                          _ProfileTab(
+                            displayName: displayName,
+                            username: username,
+                            mood: mood,
+                            currentUserId: user.id,
+                            avatarColorHex: avatarColorHex,
                           ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 14,
-                            vertical: 12,
-                          ),
-                        ),
+                          const _ActivitiesTab(),
+                        ],
                       ),
-                      const SizedBox(height: 22),
-                      const Text(
-                        'Couleur du personnage',
-                        style: TextStyle(fontWeight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 10),
-                      Wrap(
-                        spacing: 10,
-                        runSpacing: 10,
-                        children: _kAvatarPalette.map((hex) {
-                          final selected = _selectedColorHex == hex;
-                          return GestureDetector(
-                            onTap: () => setState(() => _selectedColorHex = hex),
-                            child: Container(
-                              width: 34,
-                              height: 34,
-                              decoration: BoxDecoration(
-                                color: _parseColor(hex),
-                                shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: selected ? Colors.black : Colors.transparent,
-                                  width: 2,
-                                ),
-                              ),
-                              child: selected
-                                  ? const Icon(Icons.check, color: Colors.white, size: 18)
-                                  : null,
-                            ),
-                          );
-                        }).toList(),
-                      ),
-                      const SizedBox(height: 30),
-                      SizedBox(
-                        width: double.infinity,
-                        child: FilledButton(
-                          onPressed: avatarEditState.isLoading ? null : _saveAvatar,
-                          style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                          ),
-                          child: avatarEditState.isLoading
-                              ? const SizedBox(
-                                  width: 18,
-                                  height: 18,
-                                  child: CircularProgressIndicator(strokeWidth: 2),
-                                )
-                              : const Text(
-                                  'Sauvegarder',
-                                  style: TextStyle(fontWeight: FontWeight.w700),
-                                ),
-                        ),
-                      ),
-                    ],
-                  );
-                },
+                    ),
+                  ],
+                ),
               );
             },
           );
         },
-        loading: () => const Center(child: CircularProgressIndicator()),
-        error: (error, stack) => Center(child: Text('Erreur auth: $error')),
+      ),
+    );
+  }
+}
+
+class _ProfileTab extends ConsumerWidget {
+  final String displayName;
+  final String username;
+  final AvatarMood mood;
+  final String currentUserId;
+  final String? avatarColorHex;
+
+  const _ProfileTab({
+    required this.displayName,
+    required this.username,
+    required this.mood,
+    required this.currentUserId,
+    required this.avatarColorHex,
+  });
+
+  Color? _parseAvatarColor(String? value) {
+    if (value == null || value.trim().isEmpty) return null;
+    final sanitized = value.trim().replaceFirst('#', '');
+    try {
+      if (sanitized.length == 6) {
+        return Color(int.parse('FF$sanitized', radix: 16));
+      }
+      if (sanitized.length == 8) {
+        return Color(int.parse(sanitized, radix: 16));
+      }
+    } catch (_) {
+      return null;
+    }
+    return null;
+  }
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final theme = Theme.of(context);
+    final friendsState = ref.watch(friendsNotifierProvider);
+    final ownedItemsAsync = ref.watch(ownedShopItemsProvider);
+
+    return ListView(
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+      children: [
+        // Hero mascot
+        Container(
+          height: 200,
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Center(
+            child: AnimatedAvatarWidget(
+              isMoving: false,
+              size: 160,
+              mood: mood,
+              colorFilter: _parseAvatarColor(avatarColorHex),
+              showShadow: false,
+            ),
+          ),
+        ),
+        const SizedBox(height: 16),
+
+        Text(displayName, style: theme.textTheme.headlineMedium),
+        const SizedBox(height: 2),
+        Text('@$username', style: theme.textTheme.bodyMedium),
+        const SizedBox(height: 16),
+
+        PanarButton(
+          label: 'Modifier mon peton',
+          onPressed: () => context.push(Routes.editAvatar),
+        ),
+        const SizedBox(height: 24),
+
+        // Implication
+        Text('Implication', style: theme.textTheme.titleMedium),
+        const SizedBox(height: 12),
+        Container(
+          padding: const EdgeInsets.all(20),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Column(
+            children: [
+              Text('Tu as encouragé', style: theme.textTheme.bodyMedium),
+              const SizedBox(height: 8),
+              Text('45', style: theme.textTheme.displaySmall),
+              Text('Petons ce mois-ci', style: theme.textTheme.bodySmall),
+            ],
+          ),
+        ),
+        const SizedBox(height: 16),
+        PanarButton(
+          label: 'Retourner sur le terrain',
+          onPressed: () => context.go(Routes.home, extra: {'index': 0}),
+        ),
+        const SizedBox(height: 24),
+
+        Text('Mes objets', style: theme.textTheme.titleMedium),
+        const SizedBox(height: 12),
+        ownedItemsAsync.when(
+          loading: () => const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+          error: (e, _) => Text(
+            'Erreur chargement objets: $e',
+            style: theme.textTheme.bodyMedium,
+          ),
+          data: (items) {
+            if (items.isEmpty) {
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: Text(
+                  'Aucun objet acheté pour le moment.',
+                  style: theme.textTheme.bodyMedium,
+                ),
+              );
+            }
+
+            final dateFormat = DateFormat('dd/MM/yyyy');
+            return Column(
+              children: items.map((item) {
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 12,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 36,
+                        height: 36,
+                        decoration: BoxDecoration(
+                          color: AppColors.surfaceDark,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Icon(Icons.inventory_2_outlined, size: 20),
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(item.name, style: theme.textTheme.titleSmall),
+                            const SizedBox(height: 2),
+                            Text(
+                              '${item.category} • ${item.pricePaidPetons} 💡',
+                              style: theme.textTheme.bodySmall,
+                            ),
+                          ],
+                        ),
+                      ),
+                      Text(
+                        dateFormat.format(item.purchasedAt),
+                        style: theme.textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            );
+          },
+        ),
+        const SizedBox(height: 24),
+
+        // Amis
+        Text('Mes amis', style: theme.textTheme.titleMedium),
+        const SizedBox(height: 12),
+
+        if (friendsState.isLoading)
+          const Center(child: CircularProgressIndicator())
+        else if (friendsState.friends.isEmpty)
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text(
+              'Aucun ami pour le moment.',
+              style: theme.textTheme.bodyMedium,
+            ),
+          )
+        else
+          ...friendsState.friends.map((f) {
+            final profile = f.getOtherUserProfile(currentUserId);
+            final name = profile?.username ?? '—';
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 8),
+              child: FriendListItem(friendship: f, friendUsername: name),
+            );
+          }),
+
+        const SizedBox(height: 12),
+        PanarButton(
+          label: 'Voir tous mes amis',
+          onPressed: () => context.push(Routes.friends),
+        ),
+        const SizedBox(height: 16),
+
+        // Invite
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceDark,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(Icons.qr_code, size: 20),
+              ),
+              const SizedBox(width: 12),
+              Text('Inviter des amis*', style: theme.textTheme.titleSmall),
+            ],
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          '*Astuce du Panar\nTu recevras 500 💡 par ami qui nous rejoint',
+          style: theme.textTheme.bodySmall,
+        ),
+      ],
+    );
+  }
+}
+
+class _ActivitiesTab extends StatelessWidget {
+  const _ActivitiesTab();
+
+  @override
+  Widget build(BuildContext context) {
+    return Center(
+      child: Text(
+        'Tes activités arrivent bientôt...',
+        style: Theme.of(context).textTheme.bodyMedium,
       ),
     );
   }

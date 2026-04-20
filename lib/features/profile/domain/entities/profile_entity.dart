@@ -4,6 +4,13 @@ class ProfileEntity {
   final String username;
   final String? fullName;
   final String? avatarUrl;
+  final String? avatarColor;
+  final int? onboardingActivityIndex;
+  final int? onboardingTimeIndex;
+  final bool onboardingUsernameDone;
+  final bool? onboardingLocationPermissionGranted;
+  final bool? onboardingNotificationsPermissionGranted;
+  final bool onboardingAvatarDone;
   final bool hasCompletedOnboarding;
   final DateTime createdAt;
   final DateTime updatedAt;
@@ -13,6 +20,13 @@ class ProfileEntity {
     required this.username,
     this.fullName,
     this.avatarUrl,
+    this.avatarColor,
+    this.onboardingActivityIndex,
+    this.onboardingTimeIndex,
+    this.onboardingUsernameDone = false,
+    this.onboardingLocationPermissionGranted,
+    this.onboardingNotificationsPermissionGranted,
+    this.onboardingAvatarDone = false,
     required this.hasCompletedOnboarding,
     required this.createdAt,
     required this.updatedAt,
@@ -27,6 +41,15 @@ class ProfileEntity {
         other.username == username &&
         other.fullName == fullName &&
         other.avatarUrl == avatarUrl &&
+        other.avatarColor == avatarColor &&
+        other.onboardingActivityIndex == onboardingActivityIndex &&
+        other.onboardingTimeIndex == onboardingTimeIndex &&
+        other.onboardingUsernameDone == onboardingUsernameDone &&
+        other.onboardingLocationPermissionGranted ==
+            onboardingLocationPermissionGranted &&
+        other.onboardingNotificationsPermissionGranted ==
+            onboardingNotificationsPermissionGranted &&
+        other.onboardingAvatarDone == onboardingAvatarDone &&
         other.hasCompletedOnboarding == hasCompletedOnboarding;
   }
 
@@ -36,6 +59,13 @@ class ProfileEntity {
         username.hashCode ^
         fullName.hashCode ^
         avatarUrl.hashCode ^
+        avatarColor.hashCode ^
+        onboardingActivityIndex.hashCode ^
+        onboardingTimeIndex.hashCode ^
+        onboardingUsernameDone.hashCode ^
+        onboardingLocationPermissionGranted.hashCode ^
+        onboardingNotificationsPermissionGranted.hashCode ^
+        onboardingAvatarDone.hashCode ^
         hasCompletedOnboarding.hashCode;
   }
 

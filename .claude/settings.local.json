@@ -45,7 +45,10 @@
       "Bash(kill %1)",
       "mcp__claude_ai_Figma__whoami",
       "mcp__claude_ai_Figma__get_metadata",
-      "mcp__claude_ai_Figma__use_figma"
+      "mcp__claude_ai_Figma__use_figma",
+      "mcp__claude_ai_Figma__get_screenshot",
+      "Bash(grep -v \"^$\")",
+      "mcp__claude_ai_Figma__get_design_context"
     ]
   },
   "enabledMcpjsonServers": [
