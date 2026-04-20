@@ -1,15 +1,18 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/experiments/app_experiments.dart';
+import '../../../../core/services/analytics_service.dart';
+import '../../../../core/services/remote_config_service.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../friends/presentation/providers/friends_provider.dart';
 import '../../domain/entities/duel_entity.dart';
 import '../providers/duel_provider.dart';
 
-enum _DefiMode { solo, group }
-
-enum _CreateDefiStep { mode, groupSize, difficulty, type, friends, naming }
+enum _CreateDefiStep { friends, groupSize, difficulty, type, naming }
 
 const _kDefiTypes = <String>[
   'Fréquence de course',
@@ -36,8 +39,8 @@ class CreateDuelPage extends ConsumerStatefulWidget {
 }
 
 class _CreateDuelPageState extends ConsumerState<CreateDuelPage> {
-  _DefiMode _mode = _DefiMode.solo;
-  _CreateDefiStep _currentStep = _CreateDefiStep.mode;
+  bool _isSolo = false;
+  _CreateDefiStep _currentStep = _CreateDefiStep.friends;
 
   int _groupSize = 2;
   String _selectedDifficulty = _kDefiDifficulties.keys.first;
@@ -47,12 +50,30 @@ class _CreateDuelPageState extends ConsumerState<CreateDuelPage> {
 
   bool _isSubmitting = false;
 
+  String get _challengeCreationVariant => ref.read(
+    trackedExperimentVariantProvider(
+      AppExperimentKeys.challengeCreationVariant,
+    ),
+  );
+
   @override
   void initState() {
     super.initState();
     if (widget.initialFriendId != null && widget.initialFriendId!.isNotEmpty) {
       _selectedFriendIds.add(widget.initialFriendId!);
     }
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(
+        ref
+            .read(analyticsServiceProvider)
+            .logFunnelStep(
+              funnel: 'challenge_creation',
+              step: 'create_duel_opened',
+              source: 'create_duel_page',
+              variant: _challengeCreationVariant,
+            ),
+      );
+    });
   }
 
   @override
@@ -62,28 +83,23 @@ class _CreateDuelPageState extends ConsumerState<CreateDuelPage> {
   }
 
   List<_CreateDefiStep> get _flow {
-    final flow = <_CreateDefiStep>[
-      _CreateDefiStep.mode,
-      if (_mode == _DefiMode.group) _CreateDefiStep.groupSize,
+    return [
+      _CreateDefiStep.friends,
+      if (!_isSolo && _groupSize > 2) _CreateDefiStep.groupSize,
       _CreateDefiStep.difficulty,
       _CreateDefiStep.type,
-      _CreateDefiStep.friends,
       _CreateDefiStep.naming,
     ];
-    return flow;
   }
-
-  int get _requiredFriends => _mode == _DefiMode.solo ? 1 : _groupSize - 1;
 
   bool _canProceedFromCurrentStep() {
     switch (_currentStep) {
-      case _CreateDefiStep.mode:
       case _CreateDefiStep.groupSize:
       case _CreateDefiStep.difficulty:
       case _CreateDefiStep.type:
         return true;
       case _CreateDefiStep.friends:
-        return _selectedFriendIds.length == _requiredFriends;
+        return _isSolo || _selectedFriendIds.isNotEmpty;
       case _CreateDefiStep.naming:
         return _defiNameController.text.trim().isNotEmpty;
     }
@@ -92,8 +108,7 @@ class _CreateDuelPageState extends ConsumerState<CreateDuelPage> {
   void _goNext() {
     if (!_canProceedFromCurrentStep()) {
       final message = switch (_currentStep) {
-        _CreateDefiStep.friends =>
-          'Sélectionne exactement $_requiredFriends ami${_requiredFriends > 1 ? 's' : ''}.',
+        _CreateDefiStep.friends => 'Sélectionne au moins un ami ou joue solo.',
         _CreateDefiStep.naming => 'Donne un nom à ton défi.',
         _ => 'Complète cette étape.',
       };
@@ -102,7 +117,17 @@ class _CreateDuelPageState extends ConsumerState<CreateDuelPage> {
       ).showSnackBar(SnackBar(content: Text(message)));
       return;
     }
-
+    unawaited(
+      ref
+          .read(analyticsServiceProvider)
+          .logFunnelStep(
+            funnel: 'challenge_creation',
+            step: 'step_validated',
+            source: 'create_duel_page',
+            variant: _challengeCreationVariant,
+            extraParameters: {'step': _currentStep.name},
+          ),
+    );
     final flow = _flow;
     final idx = flow.indexOf(_currentStep);
     if (idx < flow.length - 1) {
@@ -131,21 +156,28 @@ class _CreateDuelPageState extends ConsumerState<CreateDuelPage> {
     final notifier = ref.read(duelNotifierProvider.notifier);
     final targetDistance = _kDefiDifficulties[_selectedDifficulty];
     final challengeName = _defiNameController.text.trim();
+    final modeLabel = _isSolo ? 'solo' : 'group';
     final description =
-        '$challengeName • $_selectedType • $_selectedDifficulty • mode:${_mode.name}';
+        '$challengeName • $_selectedType • $_selectedDifficulty • mode:$modeLabel';
 
     int created = 0;
 
-    for (final friendId in _selectedFriendIds) {
+    if (_isSolo) {
       final duel = await notifier.createDuel(
-        challengedId: friendId,
         timing: DuelTiming.live,
-        deadlineHours: null,
         targetDistanceMeters: targetDistance,
         description: description,
       );
-      if (duel != null) {
-        created++;
+      if (duel != null) created++;
+    } else {
+      for (final friendId in _selectedFriendIds) {
+        final duel = await notifier.createDuel(
+          challengedId: friendId,
+          timing: DuelTiming.live,
+          targetDistanceMeters: targetDistance,
+          description: description,
+        );
+        if (duel != null) created++;
       }
     }
 
@@ -153,14 +185,36 @@ class _CreateDuelPageState extends ConsumerState<CreateDuelPage> {
     setState(() => _isSubmitting = false);
 
     if (created > 0) {
-      Navigator.of(context).pop();
-      final suffix = created > 1 ? 's' : '';
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('$created défi$suffix one-shot envoyé$suffix !'),
-        ),
+      unawaited(
+        ref
+            .read(analyticsServiceProvider)
+            .logFunnelStep(
+              funnel: 'challenge_creation',
+              step: 'duel_created',
+              source: 'create_duel_page',
+              variant: _challengeCreationVariant,
+              extraParameters: {
+                'is_solo': _isSolo,
+                'friends_count': _selectedFriendIds.length,
+              },
+            ),
       );
+      Navigator.of(context).pop();
+      final msg = _isSolo
+          ? 'Défi solo créé !'
+          : '$created défi${created > 1 ? 's' : ''} envoyé${created > 1 ? 's' : ''} !';
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(msg)));
     } else {
+      unawaited(
+        ref
+            .read(analyticsServiceProvider)
+            .logFunnelStep(
+              funnel: 'challenge_creation',
+              step: 'duel_creation_failed',
+              source: 'create_duel_page',
+              variant: _challengeCreationVariant,
+            ),
+      );
       final error = ref.read(duelNotifierProvider).errorMessage;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -174,7 +228,7 @@ class _CreateDuelPageState extends ConsumerState<CreateDuelPage> {
   String get _primaryActionLabel {
     switch (_currentStep) {
       case _CreateDefiStep.friends:
-        return 'Inviter (${_selectedFriendIds.length})';
+        return _isSolo ? 'Continuer' : 'Inviter (${_selectedFriendIds.length})';
       case _CreateDefiStep.naming:
         return 'Terminer';
       default:
@@ -194,25 +248,90 @@ class _CreateDuelPageState extends ConsumerState<CreateDuelPage> {
     );
   }
 
-  Widget _buildModeStep(ThemeData theme) {
+  Widget _buildFriendsStep(ThemeData theme, WidgetRef ref) {
+    final friendsState = ref.watch(friendsNotifierProvider);
+    final currentUserId = ref.watch(authStateProvider).value?.id ?? '';
+
+    final friends = friendsState.friends
+        .map((f) => f.getOtherUserProfile(currentUserId))
+        .whereType<dynamic>()
+        .toList();
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildTitle(
           theme,
-          'Défi solo ou en groupe ?',
-          'Invite ton ami à réaliser le défi avec toi',
+          'Tu fais ce défi avec qui ?',
+          _isSolo
+              ? 'Tu fais ça en solo, respect !'
+              : 'Invite des amis pour réaliser ce défi ensemble',
         ),
-        _ModeCard(
-          label: 'Je me la joue solo',
-          selected: _mode == _DefiMode.solo,
-          onTap: () => setState(() => _mode = _DefiMode.solo),
-        ),
-        const SizedBox(height: 10),
-        _ModeCard(
-          label: 'En groupe (que des n°10)',
-          selected: _mode == _DefiMode.group,
-          onTap: () => setState(() => _mode = _DefiMode.group),
+        if (!_isSolo) ...[
+          if (friendsState.isLoading)
+            const Center(child: CircularProgressIndicator())
+          else if (friends.isEmpty)
+            Text('Aucun ami disponible.', style: theme.textTheme.bodyMedium)
+          else
+            ...friends.map((profile) {
+              final selected = _selectedFriendIds.contains(profile.id);
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 10),
+                child: _FriendPickCard(
+                  username: profile.username,
+                  selected: selected,
+                  onTap: () {
+                    setState(() {
+                      if (selected) {
+                        _selectedFriendIds.remove(profile.id);
+                      } else {
+                        _selectedFriendIds.add(profile.id);
+                      }
+                    });
+                  },
+                ),
+              );
+            }),
+          const SizedBox(height: 10),
+        ],
+        // Solo checkbox (Figma: "Je me la joue solo")
+        GestureDetector(
+          onTap: () => setState(() {
+            _isSolo = !_isSolo;
+            if (_isSolo) _selectedFriendIds.clear();
+          }),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+            decoration: BoxDecoration(
+              color: _isSolo ? AppColors.textPrimary : AppColors.surface,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 20,
+                  height: 20,
+                  decoration: BoxDecoration(
+                    color: _isSolo ? Colors.white : AppColors.surfaceDark,
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: _isSolo
+                      ? const Icon(Icons.check, size: 14, color: Colors.black)
+                      : null,
+                ),
+                const SizedBox(width: 12),
+                Text(
+                  'Je me la joue solo',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: _isSolo ? Colors.white : AppColors.textPrimary,
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
       ],
     );
@@ -224,7 +343,7 @@ class _CreateDuelPageState extends ConsumerState<CreateDuelPage> {
       children: [
         _buildTitle(
           theme,
-          'À combien de personne tu veux infliger ça ?',
+          'À combien de personnes ?',
           'Pas plus de 4, faut pas être trop gourmand',
         ),
         Row(
@@ -258,9 +377,7 @@ class _CreateDuelPageState extends ConsumerState<CreateDuelPage> {
             _SquareIconButton(
               icon: Icons.add,
               onTap: () {
-                if (_groupSize < 4) {
-                  setState(() => _groupSize += 1);
-                }
+                if (_groupSize < 4) setState(() => _groupSize += 1);
               },
             ),
           ],
@@ -311,74 +428,14 @@ class _CreateDuelPageState extends ConsumerState<CreateDuelPage> {
     );
   }
 
-  Widget _buildFriendsStep(ThemeData theme, WidgetRef ref) {
-    final friendsState = ref.watch(friendsNotifierProvider);
-    final currentUserId = ref.watch(authStateProvider).value?.id ?? '';
-
-    final friends = friendsState.friends
-        .map((f) => f.getOtherUserProfile(currentUserId))
-        .whereType<dynamic>()
-        .toList();
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _buildTitle(
-          theme,
-          'Tu fais ce défi avec qui ?',
-          'Invite $_requiredFriends ami${_requiredFriends > 1 ? 's' : ''} pour réaliser ce défi',
-        ),
-        if (friendsState.isLoading)
-          const Center(child: CircularProgressIndicator())
-        else if (friends.isEmpty)
-          Text('Aucun ami disponible.', style: theme.textTheme.bodyMedium)
-        else
-          ...friends.map((profile) {
-            final selected = _selectedFriendIds.contains(profile.id);
-            return Padding(
-              padding: const EdgeInsets.only(bottom: 10),
-              child: _FriendPickCard(
-                username: profile.username,
-                selected: selected,
-                onTap: () {
-                  setState(() {
-                    if (selected) {
-                      _selectedFriendIds.remove(profile.id);
-                    } else {
-                      if (_selectedFriendIds.length < _requiredFriends) {
-                        _selectedFriendIds.add(profile.id);
-                      }
-                    }
-                  });
-                },
-              ),
-            );
-          }),
-        const SizedBox(height: 10),
-        Align(
-          alignment: Alignment.center,
-          child: FilledButton.icon(
-            onPressed: () {},
-            icon: const Icon(Icons.add, size: 18),
-            label: const Text('Voir plus d’amis'),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.textPrimary,
-              foregroundColor: Colors.white,
-            ),
-          ),
-        ),
-      ],
-    );
-  }
-
   Widget _buildNamingStep(ThemeData theme) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _buildTitle(
           theme,
-          'Comment on appel ton défi',
-          'Sois créatif, c\'est le moment de faire des gilis',
+          'Comment on appelle ton défi',
+          'Sois créatif, c\'est le moment !',
         ),
         TextField(
           controller: _defiNameController,
@@ -399,11 +456,10 @@ class _CreateDuelPageState extends ConsumerState<CreateDuelPage> {
 
   Widget _buildCurrentStep(ThemeData theme, WidgetRef ref) {
     return switch (_currentStep) {
-      _CreateDefiStep.mode => _buildModeStep(theme),
+      _CreateDefiStep.friends => _buildFriendsStep(theme, ref),
       _CreateDefiStep.groupSize => _buildGroupSizeStep(theme),
       _CreateDefiStep.difficulty => _buildDifficultyStep(theme),
       _CreateDefiStep.type => _buildTypeStep(theme),
-      _CreateDefiStep.friends => _buildFriendsStep(theme, ref),
       _CreateDefiStep.naming => _buildNamingStep(theme),
     };
   }

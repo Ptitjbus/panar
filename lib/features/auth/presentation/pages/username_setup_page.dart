@@ -10,6 +10,9 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/route_constants.dart';
+import '../../../../core/experiments/app_experiments.dart';
+import '../../../../core/services/analytics_service.dart';
+import '../../../../core/services/remote_config_service.dart';
 import '../../../../core/utils/validators.dart';
 import '../../../../shared/widgets/animated_avatar_widget.dart';
 import '../../../../shared/widgets/panar_breadcrumb.dart';
@@ -68,11 +71,38 @@ class _UsernameSetupPageState extends ConsumerState<UsernameSetupPage> {
   // Step 5 – avatar color (ARGB hex string)
   String _selectedAvatarColor = _kAvatarColors[0].$1;
 
+  String get _onboardingVariant => ref.read(
+    trackedExperimentVariantProvider(AppExperimentKeys.onboardingVariant),
+  );
+
+  String get _petonVariant => ref.read(
+    trackedExperimentVariantProvider(
+      AppExperimentKeys.petonCustomizationVariant,
+    ),
+  );
+
   @override
   void dispose() {
     _usernameController.dispose();
     _pageController.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(
+        ref
+            .read(analyticsServiceProvider)
+            .logFunnelStep(
+              funnel: 'onboarding',
+              step: 'username_setup_opened',
+              source: 'route',
+              variant: _onboardingVariant,
+            ),
+      );
+    });
   }
 
   // ── Navigation ────────────────────────────────────────────────────────────
@@ -98,6 +128,17 @@ class _UsernameSetupPageState extends ConsumerState<UsernameSetupPage> {
   }
 
   Future<void> _finish() async {
+    unawaited(
+      ref
+          .read(analyticsServiceProvider)
+          .logFunnelStep(
+            funnel: 'onboarding',
+            step: 'wizard_completed',
+            source: 'username_setup',
+            variant: _onboardingVariant,
+          ),
+    );
+
     // Set flag immediately so the router doesn't redirect back to this page
     // while the async DB write is in-flight.
     ref.read(wizardCompleteProvider.notifier).state = true;
@@ -130,6 +171,18 @@ class _UsernameSetupPageState extends ConsumerState<UsernameSetupPage> {
     await ref
         .read(profileNotifierProvider.notifier)
         .updateOnboardingProgress(onboardingLocationPermissionGranted: granted);
+    unawaited(
+      ref
+          .read(analyticsServiceProvider)
+          .logFunnelStep(
+            funnel: 'onboarding',
+            step: granted
+                ? 'location_permission_accepted'
+                : 'location_permission_denied',
+            source: 'username_setup',
+            variant: _onboardingVariant,
+          ),
+    );
     _next();
   }
 
@@ -148,6 +201,18 @@ class _UsernameSetupPageState extends ConsumerState<UsernameSetupPage> {
         .updateOnboardingProgress(
           onboardingNotificationsPermissionGranted: granted,
         );
+    unawaited(
+      ref
+          .read(analyticsServiceProvider)
+          .logFunnelStep(
+            funnel: 'onboarding',
+            step: granted
+                ? 'notification_permission_accepted'
+                : 'notification_permission_denied',
+            source: 'username_setup',
+            variant: _onboardingVariant,
+          ),
+    );
     _next();
   }
 
@@ -155,6 +220,16 @@ class _UsernameSetupPageState extends ConsumerState<UsernameSetupPage> {
     await ref
         .read(profileNotifierProvider.notifier)
         .updateOnboardingProgress(onboardingLocationPermissionGranted: false);
+    unawaited(
+      ref
+          .read(analyticsServiceProvider)
+          .logFunnelStep(
+            funnel: 'onboarding',
+            step: 'location_permission_skipped',
+            source: 'username_setup',
+            variant: _onboardingVariant,
+          ),
+    );
     _next();
   }
 
@@ -164,6 +239,16 @@ class _UsernameSetupPageState extends ConsumerState<UsernameSetupPage> {
         .updateOnboardingProgress(
           onboardingNotificationsPermissionGranted: false,
         );
+    unawaited(
+      ref
+          .read(analyticsServiceProvider)
+          .logFunnelStep(
+            funnel: 'onboarding',
+            step: 'notification_permission_skipped',
+            source: 'username_setup',
+            variant: _onboardingVariant,
+          ),
+    );
     _next();
   }
 
@@ -174,6 +259,17 @@ class _UsernameSetupPageState extends ConsumerState<UsernameSetupPage> {
           onboardingAvatarDone: true,
           avatarColor: _selectedAvatarColor,
         );
+    unawaited(
+      ref
+          .read(analyticsServiceProvider)
+          .logFunnelStep(
+            funnel: 'peton_customization',
+            step: 'avatar_color_confirmed',
+            source: 'username_setup',
+            variant: _petonVariant,
+            extraParameters: {'avatar_color': _selectedAvatarColor},
+          ),
+    );
     _next();
   }
 
@@ -250,6 +346,16 @@ class _UsernameSetupPageState extends ConsumerState<UsernameSetupPage> {
         .updateUsername(username);
 
     if (success && mounted) {
+      unawaited(
+        ref
+            .read(analyticsServiceProvider)
+            .logFunnelStep(
+              funnel: 'peton_customization',
+              step: 'peton_name_confirmed',
+              source: 'username_setup',
+              variant: _petonVariant,
+            ),
+      );
       await ref
           .read(profileNotifierProvider.notifier)
           .updateOnboardingProgress(onboardingUsernameDone: true);
@@ -325,6 +431,17 @@ class _UsernameSetupPageState extends ConsumerState<UsernameSetupPage> {
               setState(() => _selectedActivity = i);
               unawaited(
                 ref
+                    .read(analyticsServiceProvider)
+                    .logFunnelStep(
+                      funnel: 'onboarding',
+                      step: 'activity_selected',
+                      source: 'username_setup',
+                      variant: _onboardingVariant,
+                      extraParameters: {'activity_index': i},
+                    ),
+              );
+              unawaited(
+                ref
                     .read(profileNotifierProvider.notifier)
                     .updateOnboardingProgress(onboardingActivityIndex: i),
               );
@@ -345,6 +462,17 @@ class _UsernameSetupPageState extends ConsumerState<UsernameSetupPage> {
             selected: _selectedTime,
             onSelect: (i) {
               setState(() => _selectedTime = i);
+              unawaited(
+                ref
+                    .read(analyticsServiceProvider)
+                    .logFunnelStep(
+                      funnel: 'onboarding',
+                      step: 'time_selected',
+                      source: 'username_setup',
+                      variant: _onboardingVariant,
+                      extraParameters: {'time_index': i},
+                    ),
+              );
               unawaited(
                 ref
                     .read(profileNotifierProvider.notifier)
@@ -381,8 +509,20 @@ class _UsernameSetupPageState extends ConsumerState<UsernameSetupPage> {
           _AvatarStep(
             step: _step,
             selectedColor: _selectedAvatarColor,
-            onColorSelected: (hex) =>
-                setState(() => _selectedAvatarColor = hex),
+            onColorSelected: (hex) {
+              setState(() => _selectedAvatarColor = hex);
+              unawaited(
+                ref
+                    .read(analyticsServiceProvider)
+                    .logFunnelStep(
+                      funnel: 'peton_customization',
+                      step: 'avatar_color_selected',
+                      source: 'username_setup',
+                      variant: _petonVariant,
+                      extraParameters: {'avatar_color': hex},
+                    ),
+              );
+            },
             onBack: _back,
             onContinue: () {
               unawaited(_saveAvatarAndNext());

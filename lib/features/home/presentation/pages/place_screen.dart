@@ -1,4 +1,5 @@
 import 'dart:math' as math;
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -6,7 +7,9 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/route_constants.dart';
-import '../../../activities/presentation/providers/activity_provider.dart';
+import '../../../../core/experiments/app_experiments.dart';
+import '../../../../core/services/analytics_service.dart';
+import '../../../../core/services/remote_config_service.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../friends/presentation/providers/friends_provider.dart';
 import '../../../friends/presentation/widgets/friend_list_item.dart';
@@ -21,9 +24,7 @@ import '../../domain/entities/avatar_entity.dart';
 import '../../domain/entities/avatar_mood.dart';
 import '../../../live_interactions/domain/entities/run_session_entity.dart';
 import '../widgets/avatar_widget.dart';
-import '../widgets/place_grid.dart';
 import '../widgets/quick_interaction_sheet.dart';
-import '../widgets/user_drawer.dart';
 
 /// Main screen displaying the Place interactive map
 class PlaceScreen extends ConsumerStatefulWidget {
@@ -39,6 +40,12 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
   late AnimationController _animationController;
   Animation<Matrix4>? _animation;
   Offset _currentAvatarPosition = const Offset(1000, 1000);
+
+  String get _mapVariant => ref.read(
+    trackedExperimentVariantProvider(
+      AppExperimentKeys.interactiveMapDuelVariant,
+    ),
+  );
 
   @override
   void initState() {
@@ -69,7 +76,7 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
   }
 
   // Default zoom applied on first load — 1.0 = full canvas visible, 2.0 = 2× closer
-  static const double _initialZoom = 1.8;
+  static const double _initialZoom = 1.75;
 
   void _centerCameraOnAvatar({bool animate = true}) {
     if (!mounted) return;
@@ -129,54 +136,6 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
     });
   }
 
-  void _showUserDrawer(
-    AvatarEntity avatar, {
-    String? email,
-    String? runnerName,
-    RunSessionEntity? session,
-  }) {
-    if (!mounted) return;
-
-    // Invalidate activities to force refresh
-    ref.invalidate(userActivitiesProvider(avatar.userId));
-
-    // Capture context-dependent values before entering the builder
-    final outerContext = context;
-
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true,
-      backgroundColor: Colors.transparent,
-      builder: (modalContext) => Container(
-        height: MediaQuery.of(modalContext).size.height,
-        decoration: BoxDecoration(
-          color: Theme.of(modalContext).colorScheme.surface,
-          borderRadius: const BorderRadius.only(
-            topLeft: Radius.circular(24),
-            topRight: Radius.circular(24),
-          ),
-        ),
-        child: UserDrawer(
-          avatar: avatar,
-          email: email,
-          onViewLive: session != null
-              ? () {
-                  Navigator.of(modalContext).pop();
-                  outerContext.push(
-                    Routes.friendLiveRun,
-                    extra: {
-                      'sessionId': session.id,
-                      'runnerId': avatar.userId,
-                      'runnerName': runnerName ?? avatar.displayName ?? '',
-                    },
-                  );
-                }
-              : null,
-        ),
-      ),
-    );
-  }
-
   Future<void> _sendInteraction({
     required RunSessionEntity session,
     required AvatarEntity avatar,
@@ -209,8 +168,18 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
     }
   }
 
-  void _openChallengeForFriend() {
-    context.go(Routes.home, extra: {'index': 1});
+  void _openChallengeForFriend(String friendId) {
+    unawaited(
+      ref
+          .read(analyticsServiceProvider)
+          .logFunnelStep(
+            funnel: 'interactive_map',
+            step: 'challenge_friend_from_map',
+            source: 'place_screen',
+            variant: _mapVariant,
+          ),
+    );
+    context.push(Routes.createDuel, extra: {'friendId': friendId});
   }
 
   void _openProfileTab() {
@@ -301,6 +270,21 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
           isOnline: isOnline,
           onWatchLive: session != null
               ? () {
+                  final variant = ref.read(
+                    trackedExperimentVariantProvider(
+                      AppExperimentKeys.runLaunchLiveVariant,
+                    ),
+                  );
+                  unawaited(
+                    ref
+                        .read(analyticsServiceProvider)
+                        .logFunnelStep(
+                          funnel: 'live_interaction',
+                          step: 'watch_live_from_map',
+                          source: 'quick_interaction_sheet',
+                          variant: variant,
+                        ),
+                  );
                   Navigator.of(sheetContext).pop();
                   context.push(
                     Routes.friendLiveRun,
@@ -312,23 +296,36 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
                   );
                 }
               : null,
-          onOpenProfile: () {
-            Navigator.of(sheetContext).pop();
-            _showUserDrawer(avatar, runnerName: username, session: session);
-          },
           onChallenge: () {
             Navigator.of(sheetContext).pop();
-            _openChallengeForFriend();
+            _openChallengeForFriend(avatar.userId);
           },
           onCheer: session == null
               ? null
-              : () async {
+              : () {
+                  final variant = ref.read(
+                    trackedExperimentVariantProvider(
+                      AppExperimentKeys.runLaunchLiveVariant,
+                    ),
+                  );
+                  unawaited(
+                    ref
+                        .read(analyticsServiceProvider)
+                        .logFunnelStep(
+                          funnel: 'live_interaction',
+                          step: 'cheer_friend_from_map',
+                          source: 'quick_interaction_sheet',
+                          variant: variant,
+                        ),
+                  );
                   Navigator.of(sheetContext).pop();
-                  await _sendInteraction(
-                    session: session,
-                    avatar: avatar,
-                    type: InteractionType.encouragement,
-                    content: 'Tu gères, continue comme ça!',
+                  context.push(
+                    Routes.friendLiveRun,
+                    extra: {
+                      'sessionId': session.id,
+                      'runnerId': avatar.userId,
+                      'runnerName': username,
+                    },
                   );
                 },
           onSendEmoji: (emoji) async {
@@ -342,6 +339,22 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
               return;
             }
             Navigator.of(sheetContext).pop();
+            final variant = ref.read(
+              trackedExperimentVariantProvider(
+                AppExperimentKeys.runLaunchLiveVariant,
+              ),
+            );
+            unawaited(
+              ref
+                  .read(analyticsServiceProvider)
+                  .logFunnelStep(
+                    funnel: 'live_interaction',
+                    step: 'emoji_sent_from_map',
+                    source: 'quick_interaction_sheet',
+                    variant: variant,
+                    extraParameters: {'interaction_type': 'emoji'},
+                  ),
+            );
             await _sendInteraction(
               session: session,
               avatar: avatar,
@@ -411,6 +424,16 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
                   icon: _tabIndex == 1 ? Icons.person_add : Icons.search,
                   onTap: () {
                     if (_tabIndex == 1) {
+                      unawaited(
+                        ref
+                            .read(analyticsServiceProvider)
+                            .logFunnelStep(
+                              funnel: 'interactive_map',
+                              step: 'open_friend_search',
+                              source: 'place_screen',
+                              variant: _mapVariant,
+                            ),
+                      );
                       _openFriendSearchDialog();
                       return;
                     }
@@ -562,9 +585,7 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
         child: SizedBox(
           width: 2000,
           height: 2000,
-          child: CustomPaint(
-            painter: PlaceGridPainter(colorScheme: colorScheme),
-          ),
+          child: _PlaceBackground(colorScheme: colorScheme),
         ),
       ),
     );
@@ -606,8 +627,8 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
         child: SizedBox(
           width: 2000,
           height: 2000,
-          child: CustomPaint(
-            painter: PlaceGridPainter(colorScheme: colorScheme),
+          child: _PlaceBackground(
+            colorScheme: colorScheme,
             child: Stack(
               children: [
                 // Current user avatar
@@ -681,6 +702,28 @@ class _PlaceIconButton extends StatelessWidget {
         ),
         child: Icon(icon, size: 20, color: AppColors.textPrimary),
       ),
+    );
+  }
+}
+
+class _PlaceBackground extends StatelessWidget {
+  final ColorScheme colorScheme;
+  final Widget child;
+
+  const _PlaceBackground({
+    required this.colorScheme,
+    this.child = const SizedBox.shrink(),
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        Image.asset('assets/images/map.png', fit: BoxFit.cover),
+        ColoredBox(color: colorScheme.surface.withValues(alpha: 0.06)),
+        child,
+      ],
     );
   }
 }

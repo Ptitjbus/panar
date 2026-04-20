@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +7,9 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/route_constants.dart';
+import '../../../../core/experiments/app_experiments.dart';
+import '../../../../core/services/analytics_service.dart';
+import '../../../../core/services/remote_config_service.dart';
 import '../../../../shared/widgets/animated_avatar_widget.dart';
 import '../../../../shared/widgets/panar_button.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -20,6 +25,27 @@ class OnboardingPage extends ConsumerStatefulWidget {
 class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   final _pageController = PageController();
 
+  String get _onboardingVariant => ref.read(
+    trackedExperimentVariantProvider(AppExperimentKeys.onboardingVariant),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(
+        ref
+            .read(analyticsServiceProvider)
+            .logFunnelStep(
+              funnel: 'onboarding',
+              step: 'onboarding_opened',
+              source: 'route',
+              variant: _onboardingVariant,
+            ),
+      );
+    });
+  }
+
   @override
   void dispose() {
     _pageController.dispose();
@@ -27,6 +53,16 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
   }
 
   Future<void> _onCommencer() async {
+    unawaited(
+      ref
+          .read(analyticsServiceProvider)
+          .logFunnelStep(
+            funnel: 'onboarding',
+            step: 'welcome_continue_tapped',
+            source: 'welcome_step',
+            variant: _onboardingVariant,
+          ),
+    );
     await ref.read(onboardingNotifierProvider.notifier).completeOnboarding();
     if (mounted) {
       _pageController.nextPage(
@@ -45,7 +81,7 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage> {
         physics: const NeverScrollableScrollPhysics(),
         children: [
           _WelcomeStep(onCommencer: _onCommencer),
-          const _AuthStep(),
+          _AuthStep(variant: _onboardingVariant),
         ],
       ),
     );
@@ -109,7 +145,9 @@ class _WelcomeStep extends StatelessWidget {
 // ─── Step 1: Auth ─────────────────────────────────────────────────────────────
 
 class _AuthStep extends ConsumerWidget {
-  const _AuthStep();
+  final String variant;
+
+  const _AuthStep({required this.variant});
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -156,14 +194,23 @@ class _AuthStep extends ConsumerWidget {
               iconWidget: Image.asset(
                 'assets/images/google_logo.png',
                 height: 22,
-                errorBuilder: (_, _, _) =>
-                    const Icon(Icons.login, size: 22),
+                errorBuilder: (_, _, _) => const Icon(Icons.login, size: 22),
               ),
               label: 'Inscription avec Google',
               isLoading: isLoading,
               onTap: isLoading
                   ? null
                   : () async {
+                      unawaited(
+                        ref
+                            .read(analyticsServiceProvider)
+                            .logFunnelStep(
+                              funnel: 'onboarding',
+                              step: 'signup_google_tapped',
+                              source: 'auth_step',
+                              variant: variant,
+                            ),
+                      );
                       await ref
                           .read(authNotifierProvider.notifier)
                           .signInWithGoogle();
@@ -174,17 +221,45 @@ class _AuthStep extends ConsumerWidget {
 
             // Apple button
             _SocialButton(
-              iconWidget:
-                  const Icon(Icons.apple, size: 26, color: AppColors.textPrimary),
+              iconWidget: const Icon(
+                Icons.apple,
+                size: 26,
+                color: AppColors.textPrimary,
+              ),
               label: 'Inscription avec Apple',
               isLoading: isLoading,
-              onTap: isLoading ? null : () {},
+              onTap: isLoading
+                  ? null
+                  : () {
+                      unawaited(
+                        ref
+                            .read(analyticsServiceProvider)
+                            .logFunnelStep(
+                              funnel: 'onboarding',
+                              step: 'signup_apple_tapped',
+                              source: 'auth_step',
+                              variant: variant,
+                            ),
+                      );
+                    },
             ),
 
             const SizedBox(height: 32),
 
             GestureDetector(
-              onTap: () => context.go(Routes.login),
+              onTap: () {
+                unawaited(
+                  ref
+                      .read(analyticsServiceProvider)
+                      .logFunnelStep(
+                        funnel: 'onboarding',
+                        step: 'go_to_login_tapped',
+                        source: 'auth_step',
+                        variant: variant,
+                      ),
+                );
+                context.go(Routes.login);
+              },
               child: Text(
                 "J'ai déjà un compte",
                 style: GoogleFonts.inter(

@@ -32,7 +32,7 @@ class DuelRepositoryImpl implements DuelRepository {
 
   @override
   Future<DuelEntity> createDuel({
-    required String challengedId,
+    String? challengedId,
     required DuelTiming timing,
     int? deadlineHours,
     double? targetDistanceMeters,
@@ -72,7 +72,7 @@ class DuelRepositoryImpl implements DuelRepository {
     final challengerDist = await _ds.getActivityDistance(duel.challengerActivityId!);
     final challengedDist = await _ds.getActivityDistance(duel.challengedActivityId!);
 
-    final winnerId = challengerDist >= challengedDist ? duel.challengerId : duel.challengedId;
+    final winnerId = challengerDist >= challengedDist ? duel.challengerId : (duel.challengedId ?? duel.challengerId);
     await _ds.resolveWinner(duelId, winnerId);
   }
 

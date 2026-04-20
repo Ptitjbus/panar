@@ -35,19 +35,22 @@ class DuelRemoteDataSource {
 
   Future<DuelModel> createDuel({
     required String challengerId,
-    required String challengedId,
+    String? challengedId,
     required String timing,
     int? deadlineHours,
     double? targetDistanceMeters,
     String? description,
   }) async {
+    final isSolo = challengedId == null;
     try {
       final response = await _client
           .from('duels')
           .insert({
             'challenger_id': challengerId,
-            'challenged_id': challengedId,
+            if (!isSolo) 'challenged_id': challengedId,
             'timing': timing,
+            // Solo challenges start immediately as active
+            if (isSolo) 'status': 'active',
             if (deadlineHours != null) 'deadline_hours': deadlineHours,
             if (targetDistanceMeters != null) 'target_distance_meters': targetDistanceMeters,
             if (description != null) 'description': description,

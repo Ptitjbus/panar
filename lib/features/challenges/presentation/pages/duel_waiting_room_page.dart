@@ -117,7 +117,7 @@ class _DuelWaitingRoomPageState extends ConsumerState<DuelWaitingRoomPage> {
       next.whenData((states) {
         final expectedUserIds = duel == null
             ? <String>{}
-            : <String>{duel.challengerId, duel.challengedId};
+            : <String>{duel.challengerId, if (duel.challengedId != null) duel.challengedId!};
         final readyUserIds = states
             .where((s) => s.isReady)
             .map((s) => s.userId)

@@ -24,21 +24,15 @@ final experimentVariantProvider = Provider.family<String, String>((ref, key) {
   return ref.watch(remoteConfigServiceProvider).getString(key);
 });
 
-final duelsCtaVariantProvider = Provider<String>((ref) {
-  return ref.watch(
-    experimentVariantProvider(AppExperimentKeys.duelsCtaVariant),
-  );
-});
-
-final trackedDuelsCtaVariantProvider = Provider<String>((ref) {
-  final variant = ref.watch(duelsCtaVariantProvider);
+final trackedExperimentVariantProvider = Provider.family<String, String>((
+  ref,
+  key,
+) {
+  final variant = ref.watch(experimentVariantProvider(key));
   unawaited(
     ref
         .read(analyticsServiceProvider)
-        .logExperimentExposure(
-          experimentKey: AppExperimentKeys.duelsCtaVariant,
-          variant: variant,
-        ),
+        .logExperimentExposure(experimentKey: key, variant: variant),
   );
   return variant;
 });
@@ -56,9 +50,10 @@ class RemoteConfigService {
       ),
     );
 
-    await _remoteConfig.setDefaults(const {
-      AppExperimentKeys.duelsCtaVariant: 'control',
-    });
+    final defaults = <String, Object>{
+      for (final key in AppExperimentKeys.all) key: 'control',
+    };
+    await _remoteConfig.setDefaults(defaults);
 
     await _remoteConfig.fetchAndActivate();
   }

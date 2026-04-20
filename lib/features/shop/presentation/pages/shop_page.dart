@@ -1,8 +1,13 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/experiments/app_experiments.dart';
+import '../../../../core/services/analytics_service.dart';
+import '../../../../core/services/remote_config_service.dart';
 import '../../../../shared/widgets/panar_breadcrumb.dart';
 import '../../../../shared/widgets/panar_button.dart';
 import '../../domain/entities/shop_item_entity.dart';
@@ -19,7 +24,39 @@ class _ShopPageState extends ConsumerState<ShopPage> {
   int _selectedTab = 0;
   static const _tabs = ['Pansement', 'La banque 💡', 'Cosmétiques'];
 
+  String get _shopVariant => ref.read(
+    trackedExperimentVariantProvider(AppExperimentKeys.shopEngagementVariant),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(
+        ref
+            .read(analyticsServiceProvider)
+            .logFunnelStep(
+              funnel: 'shop',
+              step: 'shop_page_opened',
+              source: 'shop_page',
+              variant: _shopVariant,
+            ),
+      );
+    });
+  }
+
   Future<void> _handlePurchase(_ShopItem item) async {
+    unawaited(
+      ref
+          .read(analyticsServiceProvider)
+          .logFunnelStep(
+            funnel: 'shop',
+            step: 'purchase_attempt',
+            source: 'shop_page',
+            variant: _shopVariant,
+            extraParameters: {'item_id': item.id},
+          ),
+    );
     if (item.price == null || item.price! <= 0) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
@@ -34,6 +71,17 @@ class _ShopPageState extends ConsumerState<ShopPage> {
     if (!mounted) return;
 
     if (newBalance != null) {
+      unawaited(
+        ref
+            .read(analyticsServiceProvider)
+            .logFunnelStep(
+              funnel: 'shop',
+              step: 'purchase_success',
+              source: 'shop_page',
+              variant: _shopVariant,
+              extraParameters: {'item_id': item.id},
+            ),
+      );
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: Text(
@@ -46,6 +94,17 @@ class _ShopPageState extends ConsumerState<ShopPage> {
 
     final error = ref.read(shopPurchaseProvider);
     final message = error.whenOrNull(error: (e, _) => e.toString());
+    unawaited(
+      ref
+          .read(analyticsServiceProvider)
+          .logFunnelStep(
+            funnel: 'shop',
+            step: 'purchase_failed',
+            source: 'shop_page',
+            variant: _shopVariant,
+            extraParameters: {'item_id': item.id},
+          ),
+    );
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(message ?? 'Impossible de finaliser cet achat.'),
@@ -146,7 +205,20 @@ class _ShopPageState extends ConsumerState<ShopPage> {
                       itemBuilder: (context, i) {
                         final selected = _selectedTab == i;
                         return GestureDetector(
-                          onTap: () => setState(() => _selectedTab = i),
+                          onTap: () {
+                            setState(() => _selectedTab = i);
+                            unawaited(
+                              ref
+                                  .read(analyticsServiceProvider)
+                                  .logFunnelStep(
+                                    funnel: 'shop',
+                                    step: 'shop_tab_selected',
+                                    source: 'shop_page',
+                                    variant: _shopVariant,
+                                    extraParameters: {'tab': _tabs[i]},
+                                  ),
+                            );
+                          },
                           child: Container(
                             padding: const EdgeInsets.symmetric(
                               horizontal: 14,

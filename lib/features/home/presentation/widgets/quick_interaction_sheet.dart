@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/constants/app_colors.dart';
 import '../../../../shared/widgets/animated_avatar_widget.dart';
 import '../../domain/entities/avatar_entity.dart';
 
@@ -10,7 +11,6 @@ class QuickInteractionSheet extends StatelessWidget {
   final bool isOnline;
   final VoidCallback onChallenge;
   final VoidCallback? onCheer;
-  final VoidCallback onOpenProfile;
   final VoidCallback? onWatchLive;
   final ValueChanged<String> onSendEmoji;
   final VoidCallback onOpenEmojiPicker;
@@ -22,7 +22,6 @@ class QuickInteractionSheet extends StatelessWidget {
     required this.isOnline,
     required this.onChallenge,
     this.onCheer,
-    required this.onOpenProfile,
     required this.onSendEmoji,
     required this.onOpenEmojiPicker,
     this.onWatchLive,
@@ -42,57 +41,52 @@ class QuickInteractionSheet extends StatelessWidget {
     final safeBottom = MediaQuery.of(context).padding.bottom;
 
     return Container(
-      padding: EdgeInsets.fromLTRB(16, 8, 16, 16 + safeBottom),
+      padding: EdgeInsets.fromLTRB(16, 10, 16, 16 + safeBottom),
       decoration: const BoxDecoration(color: Colors.transparent),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 48,
+            width: 44,
             height: 5,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.8),
+              color: Colors.white.withValues(alpha: 0.9),
               borderRadius: BorderRadius.circular(999),
             ),
           ),
-          const SizedBox(height: 14),
-          if (isOnline) ...[
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-              children: [
-                ...['❤️', '🎉', '🍾', '🔥'].map(
-                  (emoji) => _RoundEmojiButton(
-                    emoji: emoji,
-                    onTap: () => onSendEmoji(emoji),
-                  ),
-                ),
-                _RoundEmojiButton(emoji: '+', onTap: onOpenEmojiPicker),
-              ],
-            ),
-            const SizedBox(height: 10),
-          ],
+          const SizedBox(height: 12),
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(10, 10, 10, 12),
+            padding: const EdgeInsets.fromLTRB(14, 12, 14, 14),
             decoration: BoxDecoration(
-              color: Colors.black,
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(18),
+              boxShadow: const [
+                BoxShadow(
+                  color: Color(0x26000000),
+                  blurRadius: 18,
+                  offset: Offset(0, 8),
+                ),
+              ],
             ),
             child: Column(
               children: [
                 Row(
                   children: [
                     Container(
-                      width: 30,
-                      height: 30,
+                      width: 44,
+                      height: 44,
                       decoration: BoxDecoration(
                         color: Colors.white,
                         borderRadius: BorderRadius.circular(999),
+                        border: Border.all(
+                          color: AppColors.textPrimary.withValues(alpha: 0.1),
+                        ),
                       ),
-                      padding: const EdgeInsets.all(4),
+                      padding: const EdgeInsets.all(6),
                       child: AnimatedAvatarWidget(
                         isMoving: false,
-                        size: 20,
+                        size: 28,
                         colorFilter: avatarColor,
                         showShadow: false,
                       ),
@@ -106,32 +100,33 @@ class QuickInteractionSheet extends StatelessWidget {
                             username,
                             overflow: TextOverflow.ellipsis,
                             style: GoogleFonts.londrinaSolid(
-                              color: Colors.white,
-                              fontSize: 20,
+                              color: AppColors.textPrimary,
+                              fontSize: 26,
                               fontWeight: FontWeight.w900,
+                              height: 1,
                             ),
                           ),
-                          const SizedBox(height: 1),
+                          const SizedBox(height: 2),
                           Row(
                             children: [
                               Container(
-                                width: 6,
-                                height: 6,
+                                width: 7,
+                                height: 7,
                                 decoration: BoxDecoration(
                                   color: isOnline
-                                      ? const Color(0xFF00FF4D)
-                                      : Colors.grey,
+                                      ? const Color(0xFF00C853)
+                                      : AppColors.textSecondary,
                                   borderRadius: BorderRadius.circular(999),
                                 ),
                               ),
                               const SizedBox(width: 6),
                               Text(
-                                isOnline ? 'En ligne maintenant' : 'Hors ligne',
+                                isOnline ? 'En ligne' : 'Hors ligne',
                                 style: GoogleFonts.inter(
                                   color: isOnline
-                                      ? const Color(0xFF00FF4D)
-                                      : Colors.grey,
-                                  fontSize: 11,
+                                      ? const Color(0xFF00C853)
+                                      : AppColors.textSecondary,
+                                  fontSize: 12,
                                   fontWeight: FontWeight.w600,
                                 ),
                               ),
@@ -140,19 +135,53 @@ class QuickInteractionSheet extends StatelessWidget {
                         ],
                       ),
                     ),
-                    if (onWatchLive != null) ...[
-                      _ActionIconButton(emoji: '👀', onTap: onWatchLive),
-                      const SizedBox(width: 6),
-                    ],
-                    _ActionIconButton(emoji: '✉️', onTap: onOpenProfile),
+                    if (onWatchLive != null)
+                      _IconChipButton(
+                        icon: Icons.visibility_rounded,
+                        label: 'Live',
+                        onTap: onWatchLive,
+                      ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                if (isOnline) ...[
+                  const SizedBox(height: 12),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      'Réagir vite',
+                      style: GoogleFonts.inter(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700,
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        ...['❤️', '🎉', '🍾', '🔥'].map(
+                          (emoji) => Padding(
+                            padding: const EdgeInsets.only(right: 8),
+                            child: _RoundEmojiButton(
+                              emoji: emoji,
+                              onTap: () => onSendEmoji(emoji),
+                            ),
+                          ),
+                        ),
+                        _RoundEmojiButton(emoji: '+', onTap: onOpenEmojiPicker),
+                      ],
+                    ),
+                  ),
+                ],
+                const SizedBox(height: 12),
                 Row(
                   children: [
                     Expanded(
                       child: _MainActionButton(
-                        label: 'Lancer un défi 🎯',
+                        label: 'Lancer un défi',
+                        icon: Icons.flag_rounded,
                         onTap: onChallenge,
                       ),
                     ),
@@ -160,7 +189,8 @@ class QuickInteractionSheet extends StatelessWidget {
                       const SizedBox(width: 10),
                       Expanded(
                         child: _MainActionButton(
-                          label: 'Féliciter 🎉',
+                          label: isOnline ? 'Encourager' : 'Féliciter',
+                          icon: Icons.celebration_rounded,
                           onTap: onCheer!,
                         ),
                       ),
@@ -187,19 +217,20 @@ class _RoundEmojiButton extends StatelessWidget {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 58,
-        height: 58,
-        decoration: const BoxDecoration(
-          color: Colors.black,
-          shape: BoxShape.circle,
+        width: 48,
+        height: 48,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          border: Border.all(color: AppColors.surfaceDark),
+          borderRadius: BorderRadius.circular(999),
         ),
         alignment: Alignment.center,
         child: Text(
           emoji,
           style: TextStyle(
-            fontSize: emoji == '+' ? 30 : 27,
-            color: Colors.white,
-            fontWeight: FontWeight.w700,
+            fontSize: emoji == '+' ? 26 : 23,
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w800,
             height: 1,
           ),
         ),
@@ -208,25 +239,42 @@ class _RoundEmojiButton extends StatelessWidget {
   }
 }
 
-class _ActionIconButton extends StatelessWidget {
-  final String emoji;
+class _IconChipButton extends StatelessWidget {
+  final IconData icon;
+  final String label;
   final VoidCallback? onTap;
 
-  const _ActionIconButton({required this.emoji, required this.onTap});
+  const _IconChipButton({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
       onTap: onTap,
       child: Container(
-        width: 32,
-        height: 32,
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
         decoration: BoxDecoration(
-          color: const Color(0xFF969696),
-          borderRadius: BorderRadius.circular(999),
+          color: const Color(0xFFE8F5E9),
+          borderRadius: BorderRadius.circular(9999),
         ),
-        alignment: Alignment.center,
-        child: Text(emoji, style: const TextStyle(fontSize: 16)),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 14, color: const Color(0xFF2E7D32)),
+            const SizedBox(width: 4),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: const Color(0xFF2E7D32),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -234,9 +282,14 @@ class _ActionIconButton extends StatelessWidget {
 
 class _MainActionButton extends StatelessWidget {
   final String label;
+  final IconData icon;
   final VoidCallback onTap;
 
-  const _MainActionButton({required this.label, required this.onTap});
+  const _MainActionButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -244,18 +297,25 @@ class _MainActionButton extends StatelessWidget {
       onTap: onTap,
       child: Container(
         height: 48,
-        alignment: Alignment.center,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
         decoration: BoxDecoration(
-          color: const Color(0xFFD9D9D9),
+          color: AppColors.textPrimary,
           borderRadius: BorderRadius.circular(10),
         ),
-        child: Text(
-          label,
-          style: GoogleFonts.inter(
-            color: Colors.black,
-            fontSize: 14,
-            fontWeight: FontWeight.w700,
-          ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: Colors.white),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
         ),
       ),
     );

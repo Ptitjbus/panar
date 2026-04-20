@@ -35,7 +35,7 @@ enum DuelTiming {
 class DuelEntity {
   final String id;
   final String challengerId;
-  final String challengedId;
+  final String? challengedId;
   final DuelStatus status;
   final DuelTiming timing;
   final int? deadlineHours;
@@ -50,10 +50,12 @@ class DuelEntity {
   final double? targetDistanceMeters;
   final String? description;
 
+  bool get isSolo => challengedId == null;
+
   const DuelEntity({
     required this.id,
     required this.challengerId,
-    required this.challengedId,
+    this.challengedId,
     required this.status,
     required this.timing,
     this.deadlineHours,
@@ -77,6 +79,6 @@ class DuelEntity {
   ProfileEntity? getOtherProfile(String currentUserId) =>
       currentUserId == challengerId ? challengedProfile : challengerProfile;
 
-  String getOtherUserId(String currentUserId) =>
+  String? getOtherUserId(String currentUserId) =>
       currentUserId == challengerId ? challengedId : challengerId;
 }

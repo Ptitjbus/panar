@@ -243,6 +243,12 @@ class _QuestProgressView extends ConsumerWidget {
     final targetKm = challenge.targetDistanceMeters != null
         ? (challenge.targetDistanceMeters! / 1000).round()
         : null;
+    final acceptedParticipants = challenge.participants
+        .where((p) => p.status == ParticipantStatus.accepted)
+        .toList();
+    final perUserTargetKm = targetKm != null && acceptedParticipants.isNotEmpty
+        ? targetKm / acceptedParticipants.length
+        : null;
 
     final partner = challenge.activeParticipants
         .where((p) => p.userId != currentUserId)
@@ -339,6 +345,81 @@ class _QuestProgressView extends ConsumerWidget {
                 ],
               ),
             ),
+            if (acceptedParticipants.isNotEmpty) ...[
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 0, 20, 10),
+                child: Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: AppColors.surface,
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Progression des participants',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      ...acceptedParticipants.map((participant) {
+                        final username =
+                            participant.profile?.username ??
+                            participant.userId.substring(0, 6);
+                        final userKm = participant.totalDistanceMeters / 1000;
+                        final ratio =
+                            perUserTargetKm == null || perUserTargetKm <= 0
+                            ? 0.0
+                            : (userKm / perUserTargetKm)
+                                  .clamp(0.0, 1.0)
+                                  .toDouble();
+                        return Padding(
+                          padding: const EdgeInsets.only(bottom: 10),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: Text(
+                                      participant.userId == currentUserId
+                                          ? '$username (toi)'
+                                          : username,
+                                      style: const TextStyle(
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                  ),
+                                  Text(
+                                    '${userKm.toStringAsFixed(2)} km',
+                                    style: const TextStyle(
+                                      color: AppColors.textSecondary,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 6),
+                              LinearProgressIndicator(
+                                minHeight: 8,
+                                value: ratio,
+                                borderRadius: BorderRadius.circular(999),
+                                backgroundColor: AppColors.surfaceDark,
+                                valueColor: const AlwaysStoppedAnimation<Color>(
+                                  AppColors.textPrimary,
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+              ),
+            ],
             Padding(
               padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
               child: Column(

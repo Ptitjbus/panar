@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/route_constants.dart';
+import '../../../../core/experiments/app_experiments.dart';
+import '../../../../core/services/analytics_service.dart';
+import '../../../../core/services/remote_config_service.dart';
 import '../../../../shared/widgets/panar_breadcrumb.dart';
 import '../../../../shared/widgets/panar_button.dart';
 import '../../../challenges/domain/entities/duel_entity.dart';
@@ -23,6 +28,12 @@ class RunRewardPage extends ConsumerStatefulWidget {
 
 class _RunRewardPageState extends ConsumerState<RunRewardPage> {
   bool _chestOpened = false;
+
+  String get _statsVariant => ref.read(
+    trackedExperimentVariantProvider(
+      AppExperimentKeys.statsConsultationVariant,
+    ),
+  );
 
   @override
   void initState() {
@@ -57,6 +68,16 @@ class _RunRewardPageState extends ConsumerState<RunRewardPage> {
   void _openChest() {
     if (_chestOpened) return;
     setState(() => _chestOpened = true);
+    unawaited(
+      ref
+          .read(analyticsServiceProvider)
+          .logFunnelStep(
+            funnel: 'run_stats',
+            step: 'reward_chest_opened',
+            source: 'run_reward_page',
+            variant: _statsVariant,
+          ),
+    );
   }
 
   @override
@@ -83,9 +104,7 @@ class _RunRewardPageState extends ConsumerState<RunRewardPage> {
                   children: [
                     // Big celebration title
                     Text(
-                      _chestOpened
-                          ? 'OUVERT !\nBRAVO !'
-                          : 'BRAVO\nCHAMPION',
+                      _chestOpened ? 'OUVERT !\nBRAVO !' : 'BRAVO\nCHAMPION',
                       style: theme.textTheme.displayMedium,
                     ),
                     const SizedBox(height: 8),
@@ -133,10 +152,22 @@ class _RunRewardPageState extends ConsumerState<RunRewardPage> {
                     if (widget.activityId != null)
                       PanarButton(
                         label: 'Voir mes stats',
-                        onPressed: () => context.go(
-                          Routes.runStats,
-                          extra: {'activityId': widget.activityId},
-                        ),
+                        onPressed: () {
+                          unawaited(
+                            ref
+                                .read(analyticsServiceProvider)
+                                .logFunnelStep(
+                                  funnel: 'run_stats',
+                                  step: 'view_stats_tapped',
+                                  source: 'run_reward_page',
+                                  variant: _statsVariant,
+                                ),
+                          );
+                          context.go(
+                            Routes.runStats,
+                            extra: {'activityId': widget.activityId},
+                          );
+                        },
                       ),
 
                     if (widget.activityId != null) const SizedBox(height: 12),

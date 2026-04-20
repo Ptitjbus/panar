@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/experiments/app_experiments.dart';
+import '../../../../core/services/analytics_service.dart';
+import '../../../../core/services/remote_config_service.dart';
 import '../../domain/entities/run_interaction_entity.dart';
 import '../../domain/entities/run_session_entity.dart';
 import '../providers/live_interactions_provider.dart';
@@ -12,7 +17,7 @@ import '../widgets/live_stats_widget.dart';
 import '../widgets/soundboard_section.dart';
 import '../widgets/voice_recorder_section.dart';
 
-class FriendLiveRunPage extends ConsumerWidget {
+class FriendLiveRunPage extends ConsumerStatefulWidget {
   final String sessionId;
   final String runnerId;
   final String runnerName;
@@ -25,8 +30,35 @@ class FriendLiveRunPage extends ConsumerWidget {
   });
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final sessionAsync = ref.watch(watchedSessionProvider(sessionId));
+  ConsumerState<FriendLiveRunPage> createState() => _FriendLiveRunPageState();
+}
+
+class _FriendLiveRunPageState extends ConsumerState<FriendLiveRunPage> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final variant = ref.read(
+        trackedExperimentVariantProvider(
+          AppExperimentKeys.runLaunchLiveVariant,
+        ),
+      );
+      unawaited(
+        ref
+            .read(analyticsServiceProvider)
+            .logFunnelStep(
+              funnel: 'live_interaction',
+              step: 'friend_live_run_opened',
+              source: 'friend_live_run_page',
+              variant: variant,
+            ),
+      );
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final sessionAsync = ref.watch(watchedSessionProvider(widget.sessionId));
 
     return Scaffold(
       backgroundColor: Theme.of(context).colorScheme.surfaceContainerLowest,
@@ -37,7 +69,7 @@ class FriendLiveRunPage extends ConsumerWidget {
             _LiveDot(),
             const SizedBox(width: 8),
             Text(
-              runnerName,
+              widget.runnerName,
               style: const TextStyle(fontWeight: FontWeight.bold),
             ),
           ],
@@ -53,8 +85,8 @@ class FriendLiveRunPage extends ConsumerWidget {
           }
           return _LiveRunBody(
             session: session,
-            sessionId: sessionId,
-            runnerId: runnerId,
+            sessionId: widget.sessionId,
+            runnerId: widget.runnerId,
           );
         },
       ),
@@ -122,8 +154,8 @@ class _SessionEndedView extends StatelessWidget {
           Text(
             'La course est terminée',
             style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
           ),
         ],
       ),
@@ -148,7 +180,23 @@ class _LiveRunBody extends ConsumerWidget {
     String? content,
     String? audioUrl,
   }) {
-    ref.read(sendInteractionProvider(sessionId).notifier).send(
+    final variant = ref.read(
+      trackedExperimentVariantProvider(AppExperimentKeys.runLaunchLiveVariant),
+    );
+    unawaited(
+      ref
+          .read(analyticsServiceProvider)
+          .logFunnelStep(
+            funnel: 'live_interaction',
+            step: 'interaction_sent',
+            source: 'friend_live_run_page',
+            variant: variant,
+            extraParameters: {'interaction_type': type.name},
+          ),
+    );
+    ref
+        .read(sendInteractionProvider(sessionId).notifier)
+        .send(
           sessionId: sessionId,
           runnerId: runnerId,
           type: type,
@@ -174,8 +222,11 @@ class _LiveRunBody extends ConsumerWidget {
               color: const Color(0xFFFF8C00),
               title: 'Encouragements',
               child: EncouragementSection(
-                onSend: (msg) =>
-                    _send(ref, type: InteractionType.encouragement, content: msg),
+                onSend: (msg) => _send(
+                  ref,
+                  type: InteractionType.encouragement,
+                  content: msg,
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -194,8 +245,11 @@ class _LiveRunBody extends ConsumerWidget {
               color: const Color(0xFF2563EB),
               title: 'Message',
               child: DirectMessageSection(
-                onSend: (msg) =>
-                    _send(ref, type: InteractionType.directMessage, content: msg),
+                onSend: (msg) => _send(
+                  ref,
+                  type: InteractionType.directMessage,
+                  content: msg,
+                ),
               ),
             ),
             const SizedBox(height: 12),
@@ -214,8 +268,11 @@ class _LiveRunBody extends ConsumerWidget {
               color: const Color(0xFF059669),
               title: 'Message vocal',
               child: VoiceRecorderSection(
-                onSend: (url) =>
-                    _send(ref, type: InteractionType.voiceMessage, audioUrl: url),
+                onSend: (url) => _send(
+                  ref,
+                  type: InteractionType.voiceMessage,
+                  audioUrl: url,
+                ),
               ),
             ),
           ],
@@ -227,8 +284,10 @@ class _LiveRunBody extends ConsumerWidget {
             right: 0,
             child: Center(
               child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.black87,
                   borderRadius: BorderRadius.circular(20),

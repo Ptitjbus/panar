@@ -27,6 +27,7 @@ class AvatarWidget extends StatefulWidget {
 }
 
 class _AvatarWidgetState extends State<AvatarWidget> {
+  static const double _avatarSize = 112;
   late Offset _position;
   final bool _isMoving = false;
 
@@ -52,8 +53,8 @@ class _AvatarWidgetState extends State<AvatarWidget> {
   @override
   Widget build(BuildContext context) {
     return Positioned(
-      left: _position.dx - 20, // Center the 40px avatar
-      top: _position.dy - 20,
+      left: _position.dx - (_avatarSize / 2),
+      top: _position.dy - (_avatarSize / 2),
       child: GestureDetector(
         onTap: widget.onTap,
         child: Stack(
@@ -61,15 +62,15 @@ class _AvatarWidgetState extends State<AvatarWidget> {
           children: [
             AnimatedAvatarWidget(
               isMoving: widget.isRunning || _isMoving,
-              size: 40,
+              size: _avatarSize,
               mood: widget.mood,
               colorFilter: _parseColor(widget.avatar.colorHex),
               showShadow: true,
             ),
             if (widget.isRunning)
               Positioned(
-                top: -12,
-                right: -20,
+                top: -14,
+                right: -24,
                 child: Container(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 4,

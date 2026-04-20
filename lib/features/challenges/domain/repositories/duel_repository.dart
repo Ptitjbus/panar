@@ -6,7 +6,7 @@ abstract class DuelRepository {
   Future<List<DuelEntity>> getMyDuels();
   Future<List<DuelEntity>> getPendingInvites();
   Future<DuelEntity> createDuel({
-    required String challengedId,
+    String? challengedId,
     required DuelTiming timing,
     int? deadlineHours,
     double? targetDistanceMeters,

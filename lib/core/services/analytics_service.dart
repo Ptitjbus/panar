@@ -30,10 +30,7 @@ class AnalyticsService {
 
     await _analytics.logEvent(
       name: 'ab_exposure',
-      parameters: {
-        'experiment_key': experimentKey,
-        'variant': variant,
-      },
+      parameters: {'experiment_key': experimentKey, 'variant': variant},
     );
   }
 
@@ -41,14 +38,39 @@ class AnalyticsService {
     required String feature,
     String? variant,
     String? source,
+    Map<String, Object>? extraParameters,
   }) async {
     final parameters = <String, Object>{'feature': feature};
     if (variant != null) parameters['variant'] = variant;
     if (source != null) parameters['source'] = source;
+    if (extraParameters != null) {
+      parameters.addAll(extraParameters);
+    }
 
-    await _analytics.logEvent(
-      name: 'feature_click',
-      parameters: parameters,
-    );
+    await logEvent(name: 'feature_click', parameters: parameters);
+  }
+
+  Future<void> logFunnelStep({
+    required String funnel,
+    required String step,
+    String? variant,
+    String? source,
+    Map<String, Object>? extraParameters,
+  }) async {
+    final parameters = <String, Object>{'funnel': funnel, 'step': step};
+    if (variant != null) parameters['variant'] = variant;
+    if (source != null) parameters['source'] = source;
+    if (extraParameters != null) {
+      parameters.addAll(extraParameters);
+    }
+
+    await logEvent(name: 'funnel_step', parameters: parameters);
+  }
+
+  Future<void> logEvent({
+    required String name,
+    Map<String, Object>? parameters,
+  }) async {
+    await _analytics.logEvent(name: name, parameters: parameters);
   }
 }

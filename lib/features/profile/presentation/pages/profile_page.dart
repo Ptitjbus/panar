@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -10,6 +11,8 @@ import '../../../../shared/widgets/animated_avatar_widget.dart';
 import '../../../../shared/widgets/panar_breadcrumb.dart';
 import '../../../../shared/widgets/panar_button.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../activities/presentation/providers/activity_provider.dart';
+import '../../../activities/presentation/widgets/activity_stats_recap.dart';
 import '../../../friends/presentation/widgets/friend_list_item.dart';
 import '../../../friends/presentation/providers/friends_provider.dart';
 import '../../../home/domain/entities/avatar_mood.dart';
@@ -27,6 +30,32 @@ class ProfilePage extends ConsumerStatefulWidget {
 class _ProfilePageState extends ConsumerState<ProfilePage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
+
+  Future<void> _confirmAndSignOut() async {
+    final shouldSignOut = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Se déconnecter'),
+        content: const Text('Tu veux vraiment te déconnecter ?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Annuler'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Déconnexion'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldSignOut != true || !mounted) return;
+
+    await ref.read(authNotifierProvider.notifier).signOut();
+    if (!mounted) return;
+    context.go(Routes.login);
+  }
 
   @override
   void initState() {
@@ -84,10 +113,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage>
                         children: [
                           const PanarBreadcrumb('Mon profil'),
                           const Spacer(),
-                          Icon(
-                            Icons.settings_outlined,
+                          IconButton(
+                            tooltip: 'Déconnexion',
+                            onPressed: _confirmAndSignOut,
+                            icon: const Icon(Icons.logout_rounded),
                             color: AppColors.textSecondary,
-                            size: 22,
                           ),
                         ],
                       ),
@@ -223,31 +253,6 @@ class _ProfileTab extends ConsumerWidget {
         ),
         const SizedBox(height: 24),
 
-        // Implication
-        Text('Implication', style: theme.textTheme.titleMedium),
-        const SizedBox(height: 12),
-        Container(
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Column(
-            children: [
-              Text('Tu as encouragé', style: theme.textTheme.bodyMedium),
-              const SizedBox(height: 8),
-              Text('45', style: theme.textTheme.displaySmall),
-              Text('Petons ce mois-ci', style: theme.textTheme.bodySmall),
-            ],
-          ),
-        ),
-        const SizedBox(height: 16),
-        PanarButton(
-          label: 'Retourner sur le terrain',
-          onPressed: () => context.go(Routes.home, extra: {'index': 0}),
-        ),
-        const SizedBox(height: 24),
-
         Text('Mes objets', style: theme.textTheme.titleMedium),
         const SizedBox(height: 12),
         ownedItemsAsync.when(
@@ -357,26 +362,37 @@ class _ProfileTab extends ConsumerWidget {
         const SizedBox(height: 16),
 
         // Invite
-        Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius: BorderRadius.circular(14),
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: AppColors.surfaceDark,
-                  borderRadius: BorderRadius.circular(8),
+        InkWell(
+          borderRadius: BorderRadius.circular(14),
+          onTap: () async {
+            final inviteLink = 'https://panar.app/invite/$username';
+            await Clipboard.setData(ClipboardData(text: inviteLink));
+            if (!context.mounted) return;
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(content: Text('Lien d’invitation copié')),
+            );
+          },
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            decoration: BoxDecoration(
+              color: AppColors.surface,
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceDark,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Icon(Icons.qr_code, size: 20),
                 ),
-                child: const Icon(Icons.qr_code, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Text('Inviter des amis*', style: theme.textTheme.titleSmall),
-            ],
+                const SizedBox(width: 12),
+                Text('Inviter des amis*', style: theme.textTheme.titleSmall),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 8),
@@ -389,16 +405,46 @@ class _ProfileTab extends ConsumerWidget {
   }
 }
 
-class _ActivitiesTab extends StatelessWidget {
+class _ActivitiesTab extends ConsumerWidget {
   const _ActivitiesTab();
 
   @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Text(
-        'Tes activités arrivent bientôt...',
-        style: Theme.of(context).textTheme.bodyMedium,
-      ),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final userId = ref.watch(authStateProvider).value?.id;
+    final theme = Theme.of(context);
+    if (userId == null) {
+      return const Center(child: Text('Non connecté'));
+    }
+
+    final activitiesAsync = ref.watch(userActivitiesProvider(userId));
+
+    return activitiesAsync.when(
+      loading: () => const Center(child: CircularProgressIndicator()),
+      error: (error, _) =>
+          Center(child: Text('Erreur chargement activités: $error')),
+      data: (activities) {
+        final summary = ActivityStatsSummary.fromActivities(activities);
+
+        return RefreshIndicator(
+          onRefresh: () async {
+            ref.invalidate(userActivitiesProvider(userId));
+          },
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 32),
+            children: [
+              ActivityStatsRecapCard(
+                summary: summary,
+                title: 'Bien ouej !',
+                subtitle: 'Récap de tes stats d\'activité',
+              ),
+              const SizedBox(height: 16),
+              Text('Dernières activités', style: theme.textTheme.titleMedium),
+              const SizedBox(height: 10),
+              ActivityTimelineList(activities: activities),
+            ],
+          ),
+        );
+      },
     );
   }
 }

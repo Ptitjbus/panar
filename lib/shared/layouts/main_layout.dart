@@ -1,24 +1,30 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../core/constants/app_colors.dart';
 import '../../core/constants/route_constants.dart';
+import '../../core/experiments/app_experiments.dart';
+import '../../core/services/analytics_service.dart';
+import '../../core/services/remote_config_service.dart';
 import '../../features/challenges/presentation/pages/challenges_page.dart';
 import '../../features/home/presentation/pages/place_screen.dart';
 import '../../features/profile/presentation/pages/profile_page.dart';
 import '../../features/shop/presentation/pages/shop_page.dart';
 
-class MainLayout extends StatefulWidget {
+class MainLayout extends ConsumerStatefulWidget {
   final int initialIndex;
 
   const MainLayout({super.key, this.initialIndex = 0});
 
   @override
-  State<MainLayout> createState() => _MainLayoutState();
+  ConsumerState<MainLayout> createState() => _MainLayoutState();
 }
 
-class _MainLayoutState extends State<MainLayout> {
+class _MainLayoutState extends ConsumerState<MainLayout> {
   late int _currentIndex;
   late PageController _pageController;
 
@@ -44,15 +50,53 @@ class _MainLayoutState extends State<MainLayout> {
 
   void _onPageChanged(int index) {
     setState(() => _currentIndex = index);
+    _trackTabSelection(index, source: 'swipe');
   }
 
   void _onItemTapped(int index) {
     setState(() => _currentIndex = index);
+    _trackTabSelection(index, source: 'bottom_nav');
     _pageController.animateToPage(
       index,
       duration: const Duration(milliseconds: 300),
       curve: Curves.easeInOut,
     );
+  }
+
+  void _trackTabSelection(int index, {required String source}) {
+    final analytics = ref.read(analyticsServiceProvider);
+    final tabName = switch (index) {
+      0 => 'map',
+      1 => 'challenges',
+      2 => 'shop',
+      3 => 'profile',
+      _ => 'unknown',
+    };
+
+    unawaited(
+      analytics.logFunnelStep(
+        funnel: 'navigation',
+        step: 'tab_selected',
+        source: source,
+        extraParameters: {'tab': tabName},
+      ),
+    );
+
+    if (index == 2) {
+      final variant = ref.read(
+        trackedExperimentVariantProvider(
+          AppExperimentKeys.shopEngagementVariant,
+        ),
+      );
+      unawaited(
+        analytics.logFunnelStep(
+          funnel: 'shop',
+          step: 'shop_page_opened',
+          source: source,
+          variant: variant,
+        ),
+      );
+    }
   }
 
   @override
@@ -68,7 +112,24 @@ class _MainLayoutState extends State<MainLayout> {
         children: _pages,
       ),
       floatingActionButton: _RunFab(
-        onPressed: () => context.push(Routes.runLaunch),
+        onPressed: () {
+          final variant = ref.read(
+            trackedExperimentVariantProvider(
+              AppExperimentKeys.runLaunchLiveVariant,
+            ),
+          );
+          unawaited(
+            ref
+                .read(analyticsServiceProvider)
+                .logFunnelStep(
+                  funnel: 'run_launch',
+                  step: 'open_run_launch',
+                  source: 'run_fab',
+                  variant: variant,
+                ),
+          );
+          context.push(Routes.runLaunch);
+        },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
       bottomNavigationBar: _PanarBottomBar(

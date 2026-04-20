@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -5,6 +7,9 @@ import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/route_constants.dart';
+import '../../../../core/experiments/app_experiments.dart';
+import '../../../../core/services/analytics_service.dart';
+import '../../../../core/services/remote_config_service.dart';
 import '../../../../shared/widgets/loading_indicator.dart';
 import '../../../../shared/widgets/panar_breadcrumb.dart';
 import '../../../../shared/widgets/panar_button.dart';
@@ -25,10 +30,44 @@ class _RunStatsPageState extends ConsumerState<RunStatsPage>
     with SingleTickerProviderStateMixin {
   late final TabController _tabController;
 
+  String get _statsVariant => ref.read(
+    trackedExperimentVariantProvider(
+      AppExperimentKeys.statsConsultationVariant,
+    ),
+  );
+
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      if (_tabController.indexIsChanging) return;
+      unawaited(
+        ref
+            .read(analyticsServiceProvider)
+            .logFunnelStep(
+              funnel: 'run_stats',
+              step: 'stats_tab_switched',
+              source: 'run_stats_page',
+              variant: _statsVariant,
+              extraParameters: {
+                'tab': _tabController.index == 0 ? 'data' : 'route',
+              },
+            ),
+      );
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(
+        ref
+            .read(analyticsServiceProvider)
+            .logFunnelStep(
+              funnel: 'run_stats',
+              step: 'stats_page_opened',
+              source: 'run_stats_page',
+              variant: _statsVariant,
+            ),
+      );
+    });
   }
 
   @override
@@ -50,12 +89,21 @@ class _RunStatsPageState extends ConsumerState<RunStatsPage>
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              const Icon(Icons.error_outline, size: 48, color: AppColors.danger),
+              const Icon(
+                Icons.error_outline,
+                size: 48,
+                color: AppColors.danger,
+              ),
               const SizedBox(height: 16),
-              Text('Erreur lors du chargement', style: theme.textTheme.titleMedium),
+              Text(
+                'Erreur lors du chargement',
+                style: theme.textTheme.titleMedium,
+              ),
               const SizedBox(height: 8),
               TextButton(
-                onPressed: () => ref.invalidate(runActivityDetailProvider(widget.activityId)),
+                onPressed: () => ref.invalidate(
+                  runActivityDetailProvider(widget.activityId),
+                ),
                 child: const Text('Réessayer'),
               ),
             ],
@@ -75,11 +123,17 @@ class _RunStatsPageState extends ConsumerState<RunStatsPage>
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),
-                  child: Text('Places aux\nchiffres !', style: theme.textTheme.displaySmall),
+                  child: Text(
+                    'Places aux\nchiffres !',
+                    style: theme.textTheme.displaySmall,
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 4, 20, 16),
-                  child: Text('Parlons peu parlons bien...', style: theme.textTheme.bodyMedium),
+                  child: Text(
+                    'Parlons peu parlons bien...',
+                    style: theme.textTheme.bodyMedium,
+                  ),
                 ),
 
                 // Tabs
@@ -89,9 +143,18 @@ class _RunStatsPageState extends ConsumerState<RunStatsPage>
                   unselectedLabelColor: AppColors.textSecondary,
                   indicatorColor: AppColors.textPrimary,
                   indicatorSize: TabBarIndicatorSize.label,
-                  labelStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w600),
-                  unselectedLabelStyle: GoogleFonts.inter(fontSize: 15, fontWeight: FontWeight.w400),
-                  tabs: const [Tab(text: 'Donnée'), Tab(text: 'Parcours')],
+                  labelStyle: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
+                  unselectedLabelStyle: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w400,
+                  ),
+                  tabs: const [
+                    Tab(text: 'Donnée'),
+                    Tab(text: 'Parcours'),
+                  ],
                 ),
 
                 Expanded(
@@ -109,12 +172,18 @@ class _RunStatsPageState extends ConsumerState<RunStatsPage>
                             ),
                             const SizedBox(height: 32),
                             _BigStat(
-                              value: activity.formattedDistance.replaceAll(' km', ''),
+                              value: activity.formattedDistance.replaceAll(
+                                ' km',
+                                '',
+                              ),
                               label: 'Kilomètres',
                             ),
                             const SizedBox(height: 32),
                             _BigStat(
-                              value: activity.formattedPace.replaceAll(' /km', ''),
+                              value: activity.formattedPace.replaceAll(
+                                ' /km',
+                                '',
+                              ),
                               label: 'Min/Km',
                             ),
                             const SizedBox(height: 48),
@@ -123,7 +192,18 @@ class _RunStatsPageState extends ConsumerState<RunStatsPage>
                                 Expanded(
                                   child: PanarButton(
                                     label: 'Partager',
-                                    onPressed: () {},
+                                    onPressed: () {
+                                      unawaited(
+                                        ref
+                                            .read(analyticsServiceProvider)
+                                            .logFunnelStep(
+                                              funnel: 'run_stats',
+                                              step: 'share_stats_tapped',
+                                              source: 'run_stats_page',
+                                              variant: _statsVariant,
+                                            ),
+                                      );
+                                    },
                                   ),
                                 ),
                                 const SizedBox(width: 12),
@@ -131,7 +211,9 @@ class _RunStatsPageState extends ConsumerState<RunStatsPage>
                                   child: PanarButton.black(
                                     label: 'Continuer',
                                     onPressed: () {
-                                      ref.read(runTrackingProvider.notifier).resetRun();
+                                      ref
+                                          .read(runTrackingProvider.notifier)
+                                          .resetRun();
                                       context.go(Routes.home);
                                     },
                                   ),
@@ -152,7 +234,9 @@ class _RunStatsPageState extends ConsumerState<RunStatsPage>
                             PanarButton.black(
                               label: "Retour à l'accueil",
                               onPressed: () {
-                                ref.read(runTrackingProvider.notifier).resetRun();
+                                ref
+                                    .read(runTrackingProvider.notifier)
+                                    .resetRun();
                                 context.go(Routes.home);
                               },
                             ),

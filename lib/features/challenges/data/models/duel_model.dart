@@ -6,7 +6,7 @@ class DuelModel extends DuelEntity {
   const DuelModel({
     required super.id,
     required super.challengerId,
-    required super.challengedId,
+    super.challengedId,
     required super.status,
     required super.timing,
     super.deadlineHours,
@@ -26,7 +26,7 @@ class DuelModel extends DuelEntity {
     return DuelModel(
       id: json['id'] as String,
       challengerId: json['challenger_id'] as String,
-      challengedId: json['challenged_id'] as String,
+      challengedId: json['challenged_id'] as String?,
       status: DuelStatus.fromString(json['status'] as String),
       timing: DuelTiming.fromString(json['timing'] as String),
       deadlineHours: json['deadline_hours'] as int?,
@@ -67,7 +67,7 @@ class DuelModel extends DuelEntity {
   DuelEntity toEntity() => DuelEntity(
     id: id,
     challengerId: challengerId,
-    challengedId: challengedId,
+    challengedId: challengedId, // nullable for solo
     status: status,
     timing: timing,
     deadlineHours: deadlineHours,

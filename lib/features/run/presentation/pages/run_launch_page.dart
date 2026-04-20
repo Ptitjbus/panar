@@ -1,9 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/route_constants.dart';
+import '../../../../core/experiments/app_experiments.dart';
+import '../../../../core/services/analytics_service.dart';
+import '../../../../core/services/remote_config_service.dart';
 import '../../../../shared/widgets/animated_avatar_widget.dart';
 
 class RunLaunchPage extends ConsumerWidget {
@@ -12,15 +17,16 @@ class RunLaunchPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final theme = Theme.of(context);
+    final variant = ref.watch(
+      trackedExperimentVariantProvider(AppExperimentKeys.runLaunchLiveVariant),
+    );
 
     return Scaffold(
       backgroundColor: AppColors.background,
       body: Stack(
         children: [
           // Background: place art placeholder
-          Positioned.fill(
-            child: Container(color: AppColors.surface),
-          ),
+          Positioned.fill(child: Container(color: AppColors.surface)),
 
           // Mascot centered
           Positioned.fill(
@@ -61,22 +67,42 @@ class RunLaunchPage extends ConsumerWidget {
               padding: const EdgeInsets.fromLTRB(20, 24, 20, 48),
               decoration: BoxDecoration(
                 color: AppColors.background.withValues(alpha: 0.95),
-                borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+                borderRadius: const BorderRadius.vertical(
+                  top: Radius.circular(24),
+                ),
               ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text("C'est l'heure de courir !", style: theme.textTheme.headlineMedium),
+                  Text(
+                    "C'est l'heure de courir !",
+                    style: theme.textTheme.headlineMedium,
+                  ),
                   const SizedBox(height: 4),
-                  Text('Choisis ton mode de course', style: theme.textTheme.bodyMedium),
+                  Text(
+                    'Choisis ton mode de course',
+                    style: theme.textTheme.bodyMedium,
+                  ),
                   const SizedBox(height: 20),
 
                   _RunModeButton(
                     label: 'Course libre',
                     subtitle: 'Courez à votre rythme, sans objectif imposé.',
                     icon: Icons.directions_run,
-                    onTap: () => context.push(Routes.runTracking),
+                    onTap: () {
+                      unawaited(
+                        ref
+                            .read(analyticsServiceProvider)
+                            .logFunnelStep(
+                              funnel: 'run_launch',
+                              step: 'start_free_run_tapped',
+                              source: 'run_launch_page',
+                              variant: variant,
+                            ),
+                      );
+                      context.push(Routes.runTracking);
+                    },
                   ),
                   const SizedBox(height: 12),
                   _RunModeButton(
@@ -87,13 +113,32 @@ class RunLaunchPage extends ConsumerWidget {
                   ),
                   const SizedBox(height: 16),
                   GestureDetector(
-                    onTap: () => context.push(Routes.runImport),
+                    onTap: () {
+                      unawaited(
+                        ref
+                            .read(analyticsServiceProvider)
+                            .logFunnelStep(
+                              funnel: 'run_launch',
+                              step: 'import_health_tapped',
+                              source: 'run_launch_page',
+                              variant: variant,
+                            ),
+                      );
+                      context.push(Routes.runImport);
+                    },
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.health_and_safety_outlined, size: 18, color: AppColors.textSecondary),
+                        const Icon(
+                          Icons.health_and_safety_outlined,
+                          size: 18,
+                          color: AppColors.textSecondary,
+                        ),
                         const SizedBox(width: 6),
-                        Text('Importer depuis Santé', style: theme.textTheme.bodyMedium),
+                        Text(
+                          'Importer depuis Santé',
+                          style: theme.textTheme.bodyMedium,
+                        ),
                       ],
                     ),
                   ),

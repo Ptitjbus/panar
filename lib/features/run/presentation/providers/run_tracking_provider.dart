@@ -90,6 +90,14 @@ class RunTrackingState {
     return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
   }
 
+  String get formattedAveragePace {
+    if (distanceMeters < 100 || elapsedSeconds <= 0) return '--:--';
+    final secondsPerKm = (elapsedSeconds / (distanceMeters / 1000)).round();
+    final minutes = secondsPerKm ~/ 60;
+    final seconds = secondsPerKm % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${seconds.toString().padLeft(2, '0')}';
+  }
+
   /// 1 peton par 100m, minimum 1 si la course est terminée
   static int computePetons(double distanceMeters) {
     return max(1, (distanceMeters / 100).floor());

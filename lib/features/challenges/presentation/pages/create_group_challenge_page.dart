@@ -1,7 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/constants/app_colors.dart';
+import '../../../../core/experiments/app_experiments.dart';
+import '../../../../core/services/analytics_service.dart';
+import '../../../../core/services/remote_config_service.dart';
 import '../../../../shared/widgets/panar_breadcrumb.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../profile/domain/entities/profile_entity.dart';
@@ -29,6 +34,29 @@ class _CreateGroupChallengePageState
   double _targetDistanceMeters = 50000;
   bool _isSubmitting = false;
 
+  String get _challengeCreationVariant => ref.read(
+    trackedExperimentVariantProvider(
+      AppExperimentKeys.challengeCreationVariant,
+    ),
+  );
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(
+        ref
+            .read(analyticsServiceProvider)
+            .logFunnelStep(
+              funnel: 'challenge_creation',
+              step: 'create_group_challenge_opened',
+              source: 'create_group_challenge_page',
+              variant: _challengeCreationVariant,
+            ),
+      );
+    });
+  }
+
   Future<void> _submit() async {
     if (_selectedFriendId == null) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -53,11 +81,31 @@ class _CreateGroupChallengePageState
     setState(() => _isSubmitting = false);
 
     if (challenge != null) {
+      unawaited(
+        ref
+            .read(analyticsServiceProvider)
+            .logFunnelStep(
+              funnel: 'challenge_creation',
+              step: 'group_challenge_created',
+              source: 'create_group_challenge_page',
+              variant: _challengeCreationVariant,
+            ),
+      );
       Navigator.of(context).pop();
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Quête collaborative envoyée !')),
       );
     } else {
+      unawaited(
+        ref
+            .read(analyticsServiceProvider)
+            .logFunnelStep(
+              funnel: 'challenge_creation',
+              step: 'group_challenge_creation_failed',
+              source: 'create_group_challenge_page',
+              variant: _challengeCreationVariant,
+            ),
+      );
       final error = ref.read(groupChallengeNotifierProvider).errorMessage;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -159,9 +207,23 @@ class _CreateGroupChallengePageState
                           username: profile.username,
                           subtitle: subtitle,
                           isSelected: isSelected,
-                          onTap: () => setState(() {
-                            _selectedFriendId = isSelected ? null : profile.id;
-                          }),
+                          onTap: () {
+                            setState(() {
+                              _selectedFriendId = isSelected
+                                  ? null
+                                  : profile.id;
+                            });
+                            unawaited(
+                              ref
+                                  .read(analyticsServiceProvider)
+                                  .logFunnelStep(
+                                    funnel: 'challenge_creation',
+                                    step: 'group_friend_selected',
+                                    source: 'create_group_challenge_page',
+                                    variant: _challengeCreationVariant,
+                                  ),
+                            );
+                          },
                         );
                       },
                     ),
