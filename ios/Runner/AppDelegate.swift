@@ -1,7 +1,6 @@
 import Flutter
 import UIKit
 import flutter_foreground_task
-import FirebaseCore
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -10,7 +9,9 @@ import FirebaseCore
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    FirebaseApp.configure()
+    #if DEBUG
+    UserDefaults.standard.set(true, forKey: "/FIRAnalyticsDebugEnabled")
+    #endif
     application.registerForRemoteNotifications()
     FlutterForegroundTaskPlugin.setPluginRegistrantCallback { registry in
       GeneratedPluginRegistrant.register(with: registry)

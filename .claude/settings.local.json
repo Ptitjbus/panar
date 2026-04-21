@@ -49,7 +49,11 @@
       "mcp__claude_ai_Figma__get_screenshot",
       "Bash(grep -v \"^$\")",
       "mcp__claude_ai_Figma__get_design_context",
-      "Bash(dart analyze *)"
+      "Bash(dart analyze *)",
+      "mcp__firebase__firebase_get_environment",
+      "Bash(plutil -p /Users/killianelattar/Workspace/Panar-Flutter/ios/Runner/GoogleService-Info.plist)",
+      "mcp__dart__list_running_apps",
+      "Bash(xcrun simctl *)"
     ]
   },
   "enabledMcpjsonServers": [

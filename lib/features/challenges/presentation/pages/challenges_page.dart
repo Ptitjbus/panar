@@ -4,6 +4,9 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/route_constants.dart';
+import '../../../../core/experiments/app_experiments.dart';
+import '../../../../core/services/analytics_service.dart';
+import '../../../../core/services/remote_config_service.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/entities/duel_entity.dart';
 import '../providers/challenge_template_provider.dart';
@@ -20,6 +23,10 @@ class ChallengesPage extends ConsumerWidget {
     final templateState = ref.watch(challengeTemplateNotifierProvider);
     final currentUserId = ref.watch(authStateProvider).value?.id ?? '';
     final theme = Theme.of(context);
+    final challengeVariant = ref.watch(
+      trackedExperimentVariantProvider(AppExperimentKeys.challengeCreationVariant),
+    );
+    final analytics = ref.read(analyticsServiceProvider);
 
     final visibleDuels = duelState.myDuels
         .where((d) => d.status != DuelStatus.cancelled)
@@ -121,7 +128,15 @@ class ChallengesPage extends ConsumerWidget {
                         ),
                         const SizedBox(height: 10),
                         FilledButton.icon(
-                          onPressed: () => context.push(Routes.duels),
+                          onPressed: () {
+                            analytics.logFunnelStep(
+                              funnel: 'challenge_creation',
+                              step: 'open_group_quests',
+                              variant: challengeVariant,
+                              source: 'challenges_page',
+                            );
+                            context.push(Routes.duels);
+                          },
                           icon: const Icon(Icons.flag_outlined, size: 18),
                           label: const Text('Ouvrir les quêtes collaboratives'),
                           style: FilledButton.styleFrom(
@@ -196,7 +211,15 @@ class ChallengesPage extends ConsumerWidget {
                     ...templateState.soloTemplates.map(
                       (t) => ChallengeTemplateCard(
                         template: t,
-                        onTap: () => context.push(Routes.createDuel),
+                        onTap: () {
+                          analytics.logFunnelStep(
+                            funnel: 'challenge_creation',
+                            step: 'template_tap_solo',
+                            variant: challengeVariant,
+                            source: 'challenges_page',
+                          );
+                          context.push(Routes.createDuel);
+                        },
                       ),
                     ),
                     if (completedSoloDuels.isEmpty &&
@@ -216,7 +239,15 @@ class ChallengesPage extends ConsumerWidget {
                     ...templateState.groupTemplates.map(
                       (t) => ChallengeTemplateCard(
                         template: t,
-                        onTap: () => context.push(Routes.createGroupChallenge),
+                        onTap: () {
+                          analytics.logFunnelStep(
+                            funnel: 'challenge_creation',
+                            step: 'template_tap_group',
+                            variant: challengeVariant,
+                            source: 'challenges_page',
+                          );
+                          context.push(Routes.createGroupChallenge);
+                        },
                       ),
                     ),
                     if (completedGroupDuels.isEmpty &&
@@ -234,8 +265,15 @@ class ChallengesPage extends ConsumerWidget {
                         .map(
                           (t) => ChallengeTemplateCard(
                             template: t,
-                            onTap: () =>
-                                context.push(Routes.createGroupChallenge),
+                            onTap: () {
+                              analytics.logFunnelStep(
+                                funnel: 'challenge_creation',
+                                step: 'template_tap_monthly',
+                                variant: challengeVariant,
+                                source: 'challenges_page',
+                              );
+                              context.push(Routes.createGroupChallenge);
+                            },
                           ),
                         )
                         .toList(),
@@ -262,7 +300,15 @@ class ChallengesPage extends ConsumerWidget {
                         width: double.infinity,
                         height: 52,
                         child: FilledButton(
-                          onPressed: () => context.push(Routes.createDuel),
+                          onPressed: () {
+                            analytics.logFunnelStep(
+                              funnel: 'challenge_creation',
+                              step: 'cta_create_duel',
+                              variant: challengeVariant,
+                              source: 'challenges_page',
+                            );
+                            context.push(Routes.createDuel);
+                          },
                           style: FilledButton.styleFrom(
                             backgroundColor: AppColors.surface,
                             foregroundColor: AppColors.textPrimary,

@@ -1,0 +1,42 @@
+{
+  "parameters": {
+    "exp_onboarding_variant_v1": {
+      "defaultValue": { "value": "control" },
+      "description": "A/B test on onboarding flow variant",
+      "valueType": "STRING"
+    },
+    "exp_peton_customization_variant_v1": {
+      "defaultValue": { "value": "control" },
+      "description": "A/B test on peton customization flow variant",
+      "valueType": "STRING"
+    },
+    "exp_run_launch_live_variant_v1": {
+      "defaultValue": { "value": "control" },
+      "description": "A/B test on run launch / live interactions variant",
+      "valueType": "STRING"
+    },
+    "exp_interactive_map_duel_variant_v1": {
+      "defaultValue": { "value": "control" },
+      "description": "A/B test on interactive map duel feature variant",
+      "valueType": "STRING"
+    },
+    "exp_challenge_creation_variant_v1": {
+      "defaultValue": { "value": "control" },
+      "description": "A/B test on challenge creation flow variant",
+      "valueType": "STRING"
+    },
+    "exp_stats_consultation_variant_v1": {
+      "defaultValue": { "value": "control" },
+      "description": "A/B test on stats consultation screen variant",
+      "valueType": "STRING"
+    },
+    "exp_shop_engagement_variant_v1": {
+      "defaultValue": { "value": "control" },
+      "description": "A/B test on shop engagement variant",
+      "valueType": "STRING"
+    }
+  },
+  "version": {
+    "versionNumber": "1"
+  }
+}
