@@ -265,7 +265,7 @@ class MyApp extends ConsumerWidget {
       if (!wasLoggedIn && isLoggedIn) {
         ref.read(wizardCompleteProvider.notifier).state = false;
         unawaited(analyticsService.setUserId(next.valueOrNull?.id));
-        NotificationSetupService.initialize(requestPermission: false);
+        NotificationSetupService.initialize();
         NotificationHandler.initialize(ref);
       }
 

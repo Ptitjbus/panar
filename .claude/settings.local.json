@@ -53,7 +53,9 @@
       "mcp__firebase__firebase_get_environment",
       "Bash(plutil -p /Users/killianelattar/Workspace/Panar-Flutter/ios/Runner/GoogleService-Info.plist)",
       "mcp__dart__list_running_apps",
-      "Bash(xcrun simctl *)"
+      "Bash(xcrun simctl *)",
+      "mcp__supabase__list_edge_functions",
+      "mcp__supabase__get_edge_function"
     ]
   },
   "enabledMcpjsonServers": [

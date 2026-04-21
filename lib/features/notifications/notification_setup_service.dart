@@ -90,7 +90,8 @@ class NotificationSetupService {
         'user_id': userId,
         'fcm_token': token,
         'platform': 'ios',
-      }, onConflict: 'user_id,fcm_token');
+        'updated_at': DateTime.now().toUtc().toIso8601String(),
+      }, onConflict: 'user_id,platform');
       debugPrint('[Notifications] Token enregistré');
     } catch (e) {
       debugPrint('[Notifications] Erreur upsert token: $e');
