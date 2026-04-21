@@ -305,6 +305,13 @@ class _UsernameSetupPageState extends ConsumerState<UsernameSetupPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       _pageController.jumpToPage(targetStep);
+
+      if (targetStep == 0 && username.isNotEmpty) {
+        final err = Validators.validateUsername(username);
+        if (err == null) {
+          _checkAvailability(username);
+        }
+      }
     });
   }
 

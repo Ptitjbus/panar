@@ -81,8 +81,12 @@ class ProfileNotifier extends StateNotifier<ProfileState> {
 
   Future<bool> checkUsernameAvailability(String username) async {
     try {
+      final user = ref.read(authStateProvider).value;
       final profileRepository = ref.read(profileRepositoryProvider);
-      return await profileRepository.checkUsernameAvailability(username);
+      return await profileRepository.checkUsernameAvailability(
+        username,
+        excludeUserId: user?.id,
+      );
     } catch (e) {
       return false;
     }

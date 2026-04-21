@@ -20,8 +20,14 @@ class ProfileRepositoryImpl implements ProfileRepository {
   }
 
   @override
-  Future<bool> checkUsernameAvailability(String username) async {
-    return await _profileRemoteDataSource.checkUsernameAvailability(username);
+  Future<bool> checkUsernameAvailability(
+    String username, {
+    String? excludeUserId,
+  }) async {
+    return await _profileRemoteDataSource.checkUsernameAvailability(
+      username,
+      excludeUserId: excludeUserId,
+    );
   }
 
   @override

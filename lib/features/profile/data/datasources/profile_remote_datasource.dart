@@ -43,13 +43,21 @@ class ProfileRemoteDataSource {
     }
   }
 
-  Future<bool> checkUsernameAvailability(String username) async {
+  Future<bool> checkUsernameAvailability(
+    String username, {
+    String? excludeUserId,
+  }) async {
     try {
-      final response = await _supabaseClient
+      var query = _supabaseClient
           .from('profiles')
           .select('username')
-          .eq('username', username)
-          .maybeSingle();
+          .eq('username', username);
+
+      if (excludeUserId != null) {
+        query = query.neq('id', excludeUserId);
+      }
+
+      final response = await query.maybeSingle();
       return response == null;
     } on PostgrestException catch (e) {
       throw DatabaseFailure(e.message);

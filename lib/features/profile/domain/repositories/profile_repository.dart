@@ -4,7 +4,7 @@ import '../entities/profile_entity.dart';
 abstract class ProfileRepository {
   Future<ProfileEntity> getProfile(String userId);
   Future<void> updateUsername(String userId, String username);
-  Future<bool> checkUsernameAvailability(String username);
+  Future<bool> checkUsernameAvailability(String username, {String? excludeUserId});
   Future<void> markOnboardingComplete(String userId, {String? avatarColor});
   Future<void> updateOnboardingProgress({
     required String userId,
