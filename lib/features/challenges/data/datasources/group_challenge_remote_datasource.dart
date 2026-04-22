@@ -189,8 +189,27 @@ class GroupChallengeRemoteDataSource {
     }
   }
 
+  Future<void> completeChallenge(String challengeId) async {
+    try {
+      await _client
+          .from('group_challenges')
+          .update({'status': 'completed'})
+          .eq('id', challengeId)
+          .timeout(const Duration(seconds: 10));
+    } on PostgrestException catch (e) {
+      throw DatabaseFailure(e.message);
+    } catch (e) {
+      throw DatabaseFailure('Failed to complete challenge: $e');
+    }
+  }
+
   Future<void> deleteChallenge(String challengeId) async {
     try {
+      await _client
+          .from('group_challenge_participants')
+          .delete()
+          .eq('challenge_id', challengeId)
+          .timeout(const Duration(seconds: 10));
       await _client
           .from('group_challenges')
           .delete()

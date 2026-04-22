@@ -15,10 +15,10 @@ import 'features/auth/presentation/pages/signup_page.dart';
 import 'features/auth/presentation/pages/username_setup_page.dart';
 import 'features/auth/presentation/providers/auth_provider.dart';
 import 'features/friends/presentation/pages/friends_page.dart';
+import 'features/challenges/presentation/pages/challenge_template_detail_page.dart';
 import 'features/challenges/presentation/pages/create_duel_page.dart';
 import 'features/challenges/presentation/pages/create_group_challenge_page.dart';
 import 'features/challenges/presentation/pages/duel_detail_page.dart';
-import 'features/challenges/presentation/pages/duel_waiting_room_page.dart';
 import 'features/challenges/presentation/pages/duels_page.dart';
 import 'features/challenges/presentation/pages/group_challenge_detail_page.dart';
 import 'features/challenges/presentation/pages/group_challenges_page.dart';
@@ -213,13 +213,6 @@ final routerProvider = Provider<GoRouter>((ref) {
         },
       ),
       GoRoute(
-        path: Routes.duelWaitingRoom,
-        builder: (context, state) {
-          final id = state.pathParameters['id']!;
-          return DuelWaitingRoomPage(duelId: id);
-        },
-      ),
-      GoRoute(
         path: Routes.groupChallenges,
         builder: (context, state) => const GroupChallengesPage(),
       ),
@@ -232,6 +225,13 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) {
           final id = state.pathParameters['id']!;
           return GroupChallengeDetailPage(challengeId: id);
+        },
+      ),
+      GoRoute(
+        path: Routes.challengeTemplateDetail,
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          return ChallengeTemplateDetailPage(templateId: id);
         },
       ),
       GoRoute(
@@ -272,6 +272,7 @@ class MyApp extends ConsumerWidget {
       if (wasLoggedIn && !isLoggedIn) {
         ref.read(wizardCompleteProvider.notifier).state = false;
         unawaited(analyticsService.setUserId(null));
+        NotificationSetupService.dispose();
       }
     });
 

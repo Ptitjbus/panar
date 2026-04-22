@@ -1,6 +1,8 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../run/data/datasources/petons_datasource.dart';
+import '../../data/datasources/duel_remote_datasource.dart';
 import '../../data/repositories/duel_repository_impl.dart';
 import '../../domain/entities/duel_entity.dart';
 import '../../domain/entities/duel_ready_state_entity.dart';
@@ -44,6 +46,7 @@ class DuelNotifier extends StateNotifier<DuelState> {
   }
 
   Future<void> loadDuels() async {
+    if (!mounted) return;
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final repo = _ref.read(duelRepositoryProvider);
@@ -51,14 +54,17 @@ class DuelNotifier extends StateNotifier<DuelState> {
         repo.getMyDuels(),
         repo.getPendingInvites(),
       ]);
+      if (!mounted) return;
       state = state.copyWith(
         myDuels: results[0],
         pendingInvites: results[1],
         isLoading: false,
       );
     } on DatabaseFailure catch (e) {
+      if (!mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.message);
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: 'Erreur de connexion');
     }
   }
@@ -132,6 +138,17 @@ class DuelNotifier extends StateNotifier<DuelState> {
           updated.challengedActivityId != null) {
         await repo.resolveWinner(duelId);
         await loadDuels();
+
+        final resolved = state.myDuels.where((d) => d.id == duelId).firstOrNull;
+        final userId = _ref.read(authStateProvider).value?.id;
+        if (resolved != null && userId != null && resolved.winnerId == userId) {
+          final reward = resolved.targetDistanceMeters != null
+              ? (resolved.targetDistanceMeters! / 20).round().clamp(50, 99999)
+              : 200;
+          try {
+            await _ref.read(petonsDatasourceProvider).awardPetons(userId, reward);
+          } catch (_) {}
+        }
       }
     } on DatabaseFailure catch (e) {
       state = state.copyWith(errorMessage: e.message);
@@ -157,13 +174,14 @@ class DuelNotifier extends StateNotifier<DuelState> {
   }
 
   Future<void> setReady(String duelId) async {
+    final userId = _ref.read(authStateProvider).value?.id;
+    if (userId == null) return;
     try {
-      final repo = _ref.read(duelRepositoryProvider);
-      await repo.setReady(duelId);
+      await _ref.read(duelRemoteDataSourceProvider).setReady(duelId, userId);
     } on DatabaseFailure catch (e) {
       state = state.copyWith(errorMessage: e.message);
     } catch (e) {
-      state = state.copyWith(errorMessage: 'Erreur salle d\'attente');
+      state = state.copyWith(errorMessage: 'Erreur lors de la mise en prêt');
     }
   }
 
@@ -175,8 +193,6 @@ final duelNotifierProvider = StateNotifierProvider<DuelNotifier, DuelState>((ref
   return DuelNotifier(ref);
 });
 
-final duelReadyStatesProvider =
-    StreamProvider.family<List<DuelReadyStateEntity>, String>((ref, duelId) {
-  final repo = ref.watch(duelRepositoryProvider);
-  return repo.watchReadyStates(duelId);
-});
+final duelReadyStatesProvider = StreamProvider.family<List<DuelReadyStateEntity>, String>(
+  (ref, duelId) => ref.watch(duelRemoteDataSourceProvider).watchReadyStates(duelId),
+);

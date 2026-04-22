@@ -63,18 +63,19 @@ class FriendsNotifier extends StateNotifier<FriendsState> {
 
   /// Load all friends data
   Future<void> loadFriends() async {
+    if (!mounted) return;
     state = state.copyWith(isLoading: true, errorMessage: null);
 
     try {
       final friendsRepository = _ref.read(friendsRepositoryProvider);
 
-      // Load all data in parallel
       final results = await Future.wait([
         friendsRepository.getMyFriends(),
         friendsRepository.getReceivedRequests(),
         friendsRepository.getSentRequests(),
       ]);
 
+      if (!mounted) return;
       state = state.copyWith(
         friends: results[0],
         receivedRequests: results[1],
@@ -82,8 +83,10 @@ class FriendsNotifier extends StateNotifier<FriendsState> {
         isLoading: false,
       );
     } on DatabaseFailure catch (e) {
+      if (!mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.message);
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(
         isLoading: false,
         errorMessage: 'Erreur de connexion. Veuillez réessayer',

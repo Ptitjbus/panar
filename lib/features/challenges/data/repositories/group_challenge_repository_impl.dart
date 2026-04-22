@@ -111,6 +111,11 @@ class GroupChallengeRepositoryImpl implements GroupChallengeRepository {
   }
 
   @override
+  Future<void> completeChallenge(String challengeId) async {
+    await _ds.completeChallenge(challengeId);
+  }
+
+  @override
   Future<void> deleteChallenge(String challengeId) async {
     await _ds.deleteChallenge(challengeId);
   }

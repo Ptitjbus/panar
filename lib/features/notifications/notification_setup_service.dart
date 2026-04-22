@@ -12,8 +12,19 @@ class NotificationSetupService {
   static StreamSubscription<RemoteMessage>? _messageSub;
   static final _localNotifications = FlutterLocalNotificationsPlugin();
   static int _notifId = 0;
+  static bool _initialized = false;
+
+  static void dispose() {
+    _initialized = false;
+    _tokenRefreshSub?.cancel();
+    _messageSub?.cancel();
+    _tokenRefreshSub = null;
+    _messageSub = null;
+  }
 
   static Future<void> initialize({bool requestPermission = true}) async {
+    if (_initialized) return;
+    _initialized = true;
     await _initLocalNotifications();
 
     final settings = requestPermission

@@ -9,8 +9,10 @@ import '../../../../core/services/analytics_service.dart';
 import '../../../../core/services/remote_config_service.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/entities/duel_entity.dart';
+import '../../domain/entities/group_challenge_entity.dart';
 import '../providers/challenge_template_provider.dart';
 import '../providers/duel_provider.dart';
+import '../providers/group_challenge_provider.dart';
 import '../widgets/challenge_template_card.dart';
 import '../widgets/duel_card.dart';
 
@@ -20,6 +22,7 @@ class ChallengesPage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final duelState = ref.watch(duelNotifierProvider);
+    final groupState = ref.watch(groupChallengeNotifierProvider);
     final templateState = ref.watch(challengeTemplateNotifierProvider);
     final currentUserId = ref.watch(authStateProvider).value?.id ?? '';
     final theme = Theme.of(context);
@@ -34,14 +37,16 @@ class ChallengesPage extends ConsumerWidget {
         .toList();
 
     final pendingDuels = visibleDuels
-        .where(
-          (d) =>
-              d.status == DuelStatus.pending || d.status == DuelStatus.accepted,
-        )
+        .where((d) => d.status == DuelStatus.pending)
         .toList();
     final activeDuels = visibleDuels
-        .where((d) => d.status == DuelStatus.active)
+        .where(
+          (d) =>
+              d.status == DuelStatus.active || d.status == DuelStatus.accepted,
+        )
         .toList();
+    final activeGroupChallenges =
+        groupState.myChallenges.where((c) => c.isActive).toList();
     final completedSoloDuels = visibleDuels
         .where((d) => d.isSolo && d.status == DuelStatus.completed)
         .toList();
@@ -161,19 +166,12 @@ class ChallengesPage extends ConsumerWidget {
                     child: _PendingInvitesSection(
                       duelState: duelState,
                       currentUserId: currentUserId,
+                      onRespond: (id, accept) => ref
+                          .read(duelNotifierProvider.notifier)
+                          .respondToDuel(id, accept: accept),
                     ),
                   ),
                 ),
-
-              if (visibleDuels.isNotEmpty) ...[
-                _SectionHeader(title: 'Mes défis (détails)'),
-                SliverList(
-                  delegate: SliverChildBuilderDelegate((_, i) {
-                    final duel = visibleDuels[i];
-                    return DuelCard(duel: duel, currentUserId: currentUserId);
-                  }, childCount: visibleDuels.length),
-                ),
-              ],
 
               if (pendingDuels.isNotEmpty) ...[
                 _SectionHeader(title: 'Défis en attente'),
@@ -188,13 +186,16 @@ class ChallengesPage extends ConsumerWidget {
                 ),
               ],
 
-              if (activeDuels.isNotEmpty) ...[
+              if (activeDuels.isNotEmpty || activeGroupChallenges.isNotEmpty) ...[
                 _SectionHeader(title: 'Défis en cours'),
                 SliverToBoxAdapter(
                   child: _HorizontalCardList(
                     children: [
                       ...activeDuels.map(
                         (d) => _DuelMiniCard(duel: d, statusLabel: 'En cours'),
+                      ),
+                      ...activeGroupChallenges.map(
+                        (c) => _GroupChallengeMiniCard(challenge: c),
                       ),
                     ],
                   ),
@@ -218,7 +219,9 @@ class ChallengesPage extends ConsumerWidget {
                             variant: challengeVariant,
                             source: 'challenges_page',
                           );
-                          context.push(Routes.createDuel);
+                          context.push(
+                            Routes.challengeTemplateDetail.replaceFirst(':id', t.id),
+                          );
                         },
                       ),
                     ),
@@ -246,7 +249,9 @@ class ChallengesPage extends ConsumerWidget {
                             variant: challengeVariant,
                             source: 'challenges_page',
                           );
-                          context.push(Routes.createGroupChallenge);
+                          context.push(
+                            Routes.challengeTemplateDetail.replaceFirst(':id', t.id),
+                          );
                         },
                       ),
                     ),
@@ -272,7 +277,9 @@ class ChallengesPage extends ConsumerWidget {
                                 variant: challengeVariant,
                                 source: 'challenges_page',
                               );
-                              context.push(Routes.createGroupChallenge);
+                              context.push(
+                                Routes.challengeTemplateDetail.replaceFirst(':id', t.id),
+                              );
                             },
                           ),
                         )
@@ -452,6 +459,81 @@ class _DuelMiniCard extends StatelessWidget {
   }
 }
 
+class _GroupChallengeMiniCard extends StatelessWidget {
+  final GroupChallengeEntity challenge;
+
+  const _GroupChallengeMiniCard({required this.challenge});
+
+  @override
+  Widget build(BuildContext context) {
+    final target = challenge.targetDistanceMeters;
+    final targetLabel = target != null
+        ? '${(target / 1000).toStringAsFixed(0)}km'
+        : '—';
+
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(10),
+        onTap: () => context.push(
+          Routes.groupChallengeDetail.replaceFirst(':id', challenge.id),
+        ),
+        child: Container(
+          width: 142,
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                height: 92,
+                decoration: const BoxDecoration(
+                  color: AppColors.surfaceDark,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(10)),
+                ),
+                child: const Center(
+                  child: Text('🤝', style: TextStyle(fontSize: 34)),
+                ),
+              ),
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.fromLTRB(8, 6, 8, 6),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Flexible(
+                        child: Text(
+                          challenge.title,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Row(
+                        children: [
+                          _Chip(label: targetLabel, dark: false),
+                          const SizedBox(width: 4),
+                          _Chip(label: 'En cours', dark: true),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
 class _EmptyCard extends StatelessWidget {
   final String label;
 
@@ -504,10 +586,12 @@ class _PendingBadge extends StatelessWidget {
 class _PendingInvitesSection extends StatelessWidget {
   final DuelState duelState;
   final String currentUserId;
+  final void Function(String id, bool accept) onRespond;
 
   const _PendingInvitesSection({
     required this.duelState,
     required this.currentUserId,
+    required this.onRespond,
   });
 
   @override
@@ -518,7 +602,12 @@ class _PendingInvitesSection extends StatelessWidget {
         ...duelState.pendingInvites.map(
           (d) => Padding(
             padding: const EdgeInsets.only(bottom: 8),
-            child: DuelCard(duel: d, currentUserId: currentUserId),
+            child: DuelCard(
+              duel: d,
+              currentUserId: currentUserId,
+              onAccept: () => onRespond(d.id, true),
+              onRefuse: () => onRespond(d.id, false),
+            ),
           ),
         ),
       ],

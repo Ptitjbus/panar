@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -8,9 +10,11 @@ import '../../core/constants/route_constants.dart';
 class NotificationHandler {
   NotificationHandler._();
 
+  static StreamSubscription<RemoteMessage>? _openedAppSub;
+
   static void initialize(WidgetRef ref) {
-    // App en arrière-plan → tap sur la notif
-    FirebaseMessaging.onMessageOpenedApp.listen((message) {
+    _openedAppSub?.cancel();
+    _openedAppSub = FirebaseMessaging.onMessageOpenedApp.listen((message) {
       _route(ref, message.data.cast<String, String>());
     });
 

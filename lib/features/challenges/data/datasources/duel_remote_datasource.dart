@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../../shared/providers/supabase_provider.dart';
-import '../models/duel_model.dart';
 import '../../domain/entities/duel_ready_state_entity.dart';
+import '../models/duel_model.dart';
 
 class DuelRemoteDataSource {
   final SupabaseClient _client;
@@ -167,12 +167,28 @@ class DuelRemoteDataSource {
     }
   }
 
+  Stream<List<DuelReadyStateEntity>> watchReadyStates(String duelId) {
+    return _client
+        .from('duel_ready_states')
+        .stream(primaryKey: ['id'])
+        .eq('duel_id', duelId)
+        .map(
+          (rows) => rows
+              .map((j) => DuelReadyStateEntity.fromJson(j))
+              .toList(),
+        );
+  }
+
   Future<void> setReady(String duelId, String userId) async {
     try {
       await _client
           .from('duel_ready_states')
           .upsert(
-            {'duel_id': duelId, 'user_id': userId, 'ready_at': DateTime.now().toIso8601String()},
+            {
+              'duel_id': duelId,
+              'user_id': userId,
+              'ready_at': DateTime.now().toIso8601String(),
+            },
             onConflict: 'duel_id,user_id',
           )
           .timeout(const Duration(seconds: 10));
@@ -181,28 +197,6 @@ class DuelRemoteDataSource {
     } catch (e) {
       throw DatabaseFailure('Failed to set ready: $e');
     }
-  }
-
-  Stream<List<DuelReadyStateEntity>> watchReadyStates(String duelId) {
-    // Polling fallback keeps waiting-room sync reliable even when realtime
-    // replication is not enabled yet on the table.
-    return Stream.periodic(const Duration(seconds: 1))
-        .asyncMap((_) async {
-          final rows = await _client
-              .from('duel_ready_states')
-              .select()
-              .eq('duel_id', duelId)
-              .timeout(const Duration(seconds: 10));
-          return (rows as List)
-              .map((r) => DuelReadyStateEntity.fromJson(r as Map<String, dynamic>))
-              .toList();
-        })
-        .handleError((error) {
-          if (error is PostgrestException) {
-            throw DatabaseFailure(error.message);
-          }
-          throw DatabaseFailure('Failed to watch ready states: $error');
-        });
   }
 }
 

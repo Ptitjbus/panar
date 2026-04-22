@@ -14,6 +14,7 @@ abstract class GroupChallengeRepository {
   Future<void> forceStart(String challengeId);
   Future<void> incrementDistance(String challengeId, double additionalMeters);
   Future<GroupChallengeEntity> getChallenge(String challengeId);
+  Future<void> completeChallenge(String challengeId);
   Future<void> deleteChallenge(String challengeId);
   Future<void> leaveChallenge(String challengeId);
 }

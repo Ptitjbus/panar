@@ -16,6 +16,7 @@ import '../../../friends/presentation/widgets/friend_list_item.dart';
 import '../../../friends/presentation/widgets/friend_request_item.dart';
 import '../../../friends/presentation/widgets/friend_search_dialog.dart';
 import '../../../friends/presentation/widgets/sent_request_item.dart';
+import '../../../notifications/presentation/pages/notifications_page.dart';
 import '../../../live_interactions/domain/entities/run_interaction_entity.dart';
 import '../../../live_interactions/presentation/providers/live_interactions_provider.dart';
 import '../../../live_interactions/presentation/providers/run_session_provider.dart';
@@ -447,10 +448,7 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
                   onChanged: (i) => setState(() => _tabIndex = i),
                 ),
                 const Spacer(),
-                _PlaceIconButton(
-                  icon: Icons.notifications_outlined,
-                  onTap: () {},
-                ),
+                const _NotificationBell(),
               ],
             ),
           ),
@@ -678,6 +676,65 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
             ),
           ),
         ),
+      ),
+    );
+  }
+}
+
+class _NotificationBell extends ConsumerWidget {
+  const _NotificationBell();
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(notificationCountProvider);
+
+    return GestureDetector(
+      onTap: () => showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        backgroundColor: Colors.transparent,
+        builder: (_) => const NotificationsPage(),
+      ),
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: const BoxDecoration(
+              color: AppColors.surface,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.notifications_outlined,
+              size: 20,
+              color: AppColors.textPrimary,
+            ),
+          ),
+          if (count > 0)
+            Positioned(
+              top: -2,
+              right: -2,
+              child: Container(
+                width: 18,
+                height: 18,
+                decoration: const BoxDecoration(
+                  color: AppColors.danger,
+                  shape: BoxShape.circle,
+                ),
+                child: Center(
+                  child: Text(
+                    count > 9 ? '9+' : '$count',
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

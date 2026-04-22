@@ -425,14 +425,36 @@ class _QuestProgressView extends ConsumerWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  if (partner != null)
+                  SizedBox(
+                    height: 58,
+                    child: FilledButton.icon(
+                      onPressed: () => context.push(Routes.runTracking),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: AppColors.surfaceDark,
+                        foregroundColor: AppColors.textPrimary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      icon: const Icon(Icons.directions_run),
+                      label: const Text(
+                        'Courir maintenant',
+                        style: TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                  if (partner != null) ...[
+                    const SizedBox(height: 8),
                     OutlinedButton.icon(
                       onPressed: () => context.push(
                         Routes.createDuel,
                         extra: {'friendId': partner.userId},
                       ),
                       icon: const Icon(Icons.people_alt_outlined),
-                      label: const Text('Course en direct (salle d\'attente)'),
+                      label: const Text('Course en direct (duel)'),
                       style: OutlinedButton.styleFrom(
                         foregroundColor: AppColors.textPrimary,
                         side: const BorderSide(color: AppColors.border),
@@ -442,7 +464,8 @@ class _QuestProgressView extends ConsumerWidget {
                         ),
                       ),
                     ),
-                  const SizedBox(height: 10),
+                  ],
+                  const SizedBox(height: 8),
                   SizedBox(
                     height: 58,
                     child: FilledButton(
@@ -477,7 +500,7 @@ class _QuestProgressView extends ConsumerWidget {
   }
 }
 
-class _QuestRewardView extends StatelessWidget {
+class _QuestRewardView extends ConsumerStatefulWidget {
   final GroupChallengeEntity challenge;
   final bool rewardOpened;
   final VoidCallback onOpenReward;
@@ -489,11 +512,31 @@ class _QuestRewardView extends StatelessWidget {
   });
 
   @override
+  ConsumerState<_QuestRewardView> createState() => _QuestRewardViewState();
+}
+
+class _QuestRewardViewState extends ConsumerState<_QuestRewardView> {
+  int? _awardedBalance;
+
+  Future<void> _openAndClaim() async {
+    widget.onOpenReward();
+    final gained =
+        (widget.challenge.targetDistanceMeters != null
+                ? widget.challenge.targetDistanceMeters! / 200
+                : widget.challenge.teamDistanceMeters / 200)
+            .round();
+    final newBalance = await ref
+        .read(groupChallengeNotifierProvider.notifier)
+        .claimReward(widget.challenge.id, gained);
+    if (mounted) setState(() => _awardedBalance = newBalance);
+  }
+
+  @override
   Widget build(BuildContext context) {
     final gained =
-        (challenge.targetDistanceMeters != null
-                ? challenge.targetDistanceMeters! / 200
-                : challenge.teamDistanceMeters / 200)
+        (widget.challenge.targetDistanceMeters != null
+                ? widget.challenge.targetDistanceMeters! / 200
+                : widget.challenge.teamDistanceMeters / 200)
             .round();
 
     return Scaffold(
@@ -509,7 +552,7 @@ class _QuestRewardView extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 8),
-            if (!rewardOpened) ...[
+            if (!widget.rewardOpened) ...[
               const Text(
                 'BRAVO\nA VOUS 2',
                 textAlign: TextAlign.center,
@@ -534,7 +577,7 @@ class _QuestRewardView extends StatelessWidget {
                   height: 60,
                   width: double.infinity,
                   child: FilledButton(
-                    onPressed: onOpenReward,
+                    onPressed: _openAndClaim,
                     style: FilledButton.styleFrom(
                       backgroundColor: AppColors.surfaceDark,
                       foregroundColor: AppColors.textPrimary,
@@ -567,6 +610,16 @@ class _QuestRewardView extends StatelessWidget {
                 'Ampoules gagnées',
                 style: TextStyle(color: AppColors.textSecondary, fontSize: 16),
               ),
+              if (_awardedBalance != null) ...[
+                const SizedBox(height: 4),
+                Text(
+                  'Solde total : $_awardedBalance 💡',
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 14,
+                  ),
+                ),
+              ],
               const Spacer(),
               const Text('💡', style: TextStyle(fontSize: 170)),
               const Spacer(),

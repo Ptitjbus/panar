@@ -25,7 +25,7 @@ class DuelsPage extends ConsumerWidget {
         .where((c) => c.isCompleted)
         .length;
     final activeCount = state.myChallenges.where((c) => c.isActive).length;
-    final boardPosition = completedCount.clamp(0, 50);
+    final boardPosition = completedCount.clamp(0, 30);
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F7F7),
@@ -159,10 +159,10 @@ class _CollaborativeBoardCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final currentCase = position <= 0 ? 1 : position;
-    final boardPoints = _boardPoints(total: 50);
+    final boardPoints = _boardPoints(total: 30);
 
     return Container(
-      height: 560,
+      height: 620,
       padding: const EdgeInsets.fromLTRB(14, 14, 14, 14),
       decoration: BoxDecoration(
         color: const Color(0xFFE9E9E9),
@@ -196,7 +196,7 @@ class _CollaborativeBoardCard extends StatelessWidget {
               children: [
                 Expanded(
                   child: Text(
-                    'Case actuelle: $currentCase / 50',
+                    'Case actuelle: $currentCase / 30',
                     style: theme.textTheme.bodyMedium?.copyWith(
                       fontWeight: FontWeight.w700,
                     ),
@@ -301,8 +301,8 @@ class _CollaborativeBoardCard extends StatelessWidget {
   List<Offset> _boardPoints({required int total}) {
     return List.generate(total, (index) {
       final t = index / (total - 1);
-      final x = 0.5 + 0.36 * math.sin(t * math.pi * 4);
-      final y = 0.08 + 0.84 * t;
+      final x = 0.5 + 0.38 * math.sin(t * math.pi * 3);
+      final y = 0.05 + 0.90 * t;
       return Offset(x, y);
     });
   }

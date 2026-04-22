@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../core/errors/failures.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../run/data/datasources/petons_datasource.dart';
 import '../../data/repositories/group_challenge_repository_impl.dart';
 import '../../domain/entities/group_challenge_entity.dart';
 
@@ -43,6 +44,7 @@ class GroupChallengeNotifier extends StateNotifier<GroupChallengeState> {
   }
 
   Future<void> loadChallenges() async {
+    if (!mounted) return;
     state = state.copyWith(isLoading: true, errorMessage: null);
     try {
       final repo = _ref.read(groupChallengeRepositoryProvider);
@@ -50,14 +52,17 @@ class GroupChallengeNotifier extends StateNotifier<GroupChallengeState> {
         repo.getMyChallenges(),
         repo.getPendingInvites(),
       ]);
+      if (!mounted) return;
       state = state.copyWith(
         myChallenges: results[0],
         pendingInvites: results[1],
         isLoading: false,
       );
     } on DatabaseFailure catch (e) {
+      if (!mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: e.message);
     } catch (e) {
+      if (!mounted) return;
       state = state.copyWith(isLoading: false, errorMessage: 'Erreur de connexion');
     }
   }
@@ -147,6 +152,29 @@ class GroupChallengeNotifier extends StateNotifier<GroupChallengeState> {
       state = state.copyWith(errorMessage: 'Erreur lors de la suppression');
       return false;
     }
+  }
+
+  /// Marks the challenge completed in the DB and awards petons to the current user.
+  Future<int> claimReward(String challengeId, int rewardAmount) async {
+    int awarded = 0;
+    try {
+      final repo = _ref.read(groupChallengeRepositoryProvider);
+      await repo.completeChallenge(challengeId);
+      await loadChallenges();
+    } on DatabaseFailure catch (e) {
+      state = state.copyWith(errorMessage: e.message);
+    } catch (_) {}
+
+    try {
+      final userId = _ref.read(authStateProvider).value?.id;
+      if (userId != null) {
+        awarded = await _ref
+            .read(petonsDatasourceProvider)
+            .awardPetons(userId, rewardAmount);
+      }
+    } catch (_) {}
+
+    return awarded;
   }
 
   Future<bool> leaveChallenge(String challengeId) async {
