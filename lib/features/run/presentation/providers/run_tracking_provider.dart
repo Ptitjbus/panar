@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
-import 'package:live_activities/live_activities.dart';
 
 import '../../../../core/errors/failures.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
@@ -107,16 +106,11 @@ class RunTrackingState {
 class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
   final Ref _ref;
 
-  static const _appGroupId = 'group.com.panar.run';
-  final _liveActivities = LiveActivities();
-  String? _liveActivityId;
-
   StreamSubscription<Position>? _locationSubscription;
   Timer? _elapsedTimer;
   Position? _lastPosition;
   DateTime? _startTime;
   int _pointSequence = 0;
-  DateTime? _lastLiveActivityUpdate;
   DateTime? _lastSessionUpdate;
 
   RunTrackingNotifier(this._ref) : super(const RunTrackingState());
@@ -143,7 +137,6 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
     _startTimer();
     _startLocationStream();
     BackgroundTrackingService.start();
-    unawaited(_startLiveActivity());
     unawaited(_startLiveSession());
   }
 
@@ -172,7 +165,6 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
     _elapsedTimer = null;
 
     BackgroundTrackingService.stop();
-    unawaited(_endLiveActivity());
     unawaited(_endLiveSession());
 
     // Activité trop courte — on nettoie mais on ne sauvegarde pas
@@ -341,57 +333,6 @@ class RunTrackingNotifier extends StateNotifier<RunTrackingState> {
       duration: state.formattedDuration,
     );
 
-    // Mise à jour Live Activity (throttle 5s)
-    final now = DateTime.now();
-    if (_lastLiveActivityUpdate == null ||
-        now.difference(_lastLiveActivityUpdate!).inSeconds >= 5) {
-      _lastLiveActivityUpdate = now;
-      _updateLiveActivity(
-        distance: (newDistance / 1000).toStringAsFixed(2),
-        duration: state.formattedDuration,
-        pace: state.formattedPace,
-      );
-    }
-  }
-
-  Future<void> _startLiveActivity() async {
-    try {
-      await _liveActivities.init(appGroupId: _appGroupId);
-      final id = 'panar_run_${DateTime.now().millisecondsSinceEpoch}';
-      await _liveActivities.createActivity(id, {
-        'distance': '0.00',
-        'duration': '00:00',
-        'pace': '--:--',
-      });
-      _liveActivityId = id;
-    } catch (_) {
-      // Non-bloquant — Live Activities non disponibles (simulateur, iOS < 16.1)
-    }
-  }
-
-  void _updateLiveActivity({
-    required String distance,
-    required String duration,
-    required String pace,
-  }) {
-    final id = _liveActivityId;
-    if (id == null) return;
-    _liveActivities
-        .updateActivity(id, {
-          'distance': distance,
-          'duration': duration,
-          'pace': pace,
-        })
-        .catchError((_) {});
-  }
-
-  Future<void> _endLiveActivity() async {
-    final id = _liveActivityId;
-    if (id == null) return;
-    try {
-      await _liveActivities.endActivity(id);
-    } catch (_) {}
-    _liveActivityId = null;
   }
 
   Future<void> _startLiveSession() async {

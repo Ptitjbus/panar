@@ -26,7 +26,6 @@ dependencies:
   lottie: ^3.1.2
   flutter_foreground_task: ^9.2.2
   health: ^13.3.1
-  live_activities: ^2.4.7
   intl: ^0.19.0
   google_fonts: ^6.2.1
   audioplayers: ^6.0.0

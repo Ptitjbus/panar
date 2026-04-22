@@ -12,7 +12,6 @@ import firebase_analytics
 import firebase_core
 import firebase_messaging
 import firebase_remote_config
-import flutter_app_group_directory
 import flutter_local_notifications
 import geolocator_apple
 import google_sign_in_ios
@@ -29,7 +28,6 @@ func RegisterGeneratedPlugins(registry: FlutterPluginRegistry) {
   FLTFirebaseCorePlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseCorePlugin"))
   FLTFirebaseMessagingPlugin.register(with: registry.registrar(forPlugin: "FLTFirebaseMessagingPlugin"))
   FirebaseRemoteConfigPlugin.register(with: registry.registrar(forPlugin: "FirebaseRemoteConfigPlugin"))
-  FlutterAppGroupDirectoryPlugin.register(with: registry.registrar(forPlugin: "FlutterAppGroupDirectoryPlugin"))
   FlutterLocalNotificationsPlugin.register(with: registry.registrar(forPlugin: "FlutterLocalNotificationsPlugin"))
   GeolocatorPlugin.register(with: registry.registrar(forPlugin: "GeolocatorPlugin"))
   FLTGoogleSignInPlugin.register(with: registry.registrar(forPlugin: "FLTGoogleSignInPlugin"))

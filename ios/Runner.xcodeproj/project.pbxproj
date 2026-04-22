@@ -18,11 +18,7 @@
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
 		97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FF1CF9000F007C117D /* LaunchScreen.storyboard */; };
 		AD038E8B2F918AEB00B9BF21 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = AD038E8A2F918AEB00B9BF21 /* GoogleService-Info.plist */; };
-		AD038E8C2F918AEB00B9BF21 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = AD038E8A2F918AEB00B9BF21 /* GoogleService-Info.plist */; };
 		AD038E8D2F918AEB00B9BF21 /* GoogleService-Info.plist in Resources */ = {isa = PBXBuildFile; fileRef = AD038E8A2F918AEB00B9BF21 /* GoogleService-Info.plist */; };
-		AD8B583C2F8D84990065A659 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AD8B583B2F8D84990065A659 /* WidgetKit.framework */; };
-		AD8B583E2F8D84990065A659 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = AD8B583D2F8D84990065A659 /* SwiftUI.framework */; };
-		AD8B584F2F8D849B0065A659 /* PanarRunWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = AD8B583A2F8D84990065A659 /* PanarRunWidgetExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -32,13 +28,6 @@
 			proxyType = 1;
 			remoteGlobalIDString = 97C146ED1CF9000F007C117D;
 			remoteInfo = Runner;
-		};
-		AD8B584D2F8D849B0065A659 /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 97C146E61CF9000F007C117D /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = AD8B58392F8D84990065A659;
-			remoteInfo = PanarRunWidgetExtension;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -59,7 +48,6 @@
 			dstPath = "";
 			dstSubfolderSpec = 13;
 			files = (
-				AD8B584F2F8D849B0065A659 /* PanarRunWidgetExtension.appex in Embed Foundation Extensions */,
 			);
 			name = "Embed Foundation Extensions";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -91,47 +79,11 @@
 		97C147021CF9000F007C117D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AD038E8A2F918AEB00B9BF21 /* GoogleService-Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = "GoogleService-Info.plist"; sourceTree = "<group>"; };
 		AD8B58352F8D810D0065A659 /* Runner.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Runner.entitlements; sourceTree = "<group>"; };
-		AD8B583A2F8D84990065A659 /* PanarRunWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PanarRunWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		AD8B583B2F8D84990065A659 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		AD8B583D2F8D84990065A659 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		D07EAA9C4152CA1810F98176 /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F82D14DB0AC64CF8426E91D0 /* Pods-Runner.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.debug.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
-
-/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		AD8B58542F8D849B0065A659 /* Exceptions for "PanarRunWidget" folder in "PanarRunWidgetExtension" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				Info.plist,
-				PanarRunWidgetBundle.swift,
-				PanarRunWidgetLiveActivity.swift,
-			);
-			target = AD8B58392F8D84990065A659 /* PanarRunWidgetExtension */;
-		};
-		AD8B585A2F8D85960065A659 /* Exceptions for "PanarRunWidget" folder in "Runner" target */ = {
-			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
-			membershipExceptions = (
-				PanarRunAttributes.swift,
-			);
-			target = 97C146ED1CF9000F007C117D /* Runner */;
-		};
-/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
-
-/* Begin PBXFileSystemSynchronizedRootGroup section */
-		AD8B583F2F8D84990065A659 /* PanarRunWidget */ = {
-			isa = PBXFileSystemSynchronizedRootGroup;
-			exceptions = (
-				AD8B585A2F8D85960065A659 /* Exceptions for "PanarRunWidget" folder in "Runner" target */,
-				AD8B58542F8D849B0065A659 /* Exceptions for "PanarRunWidget" folder in "PanarRunWidgetExtension" target */,
-			);
-			explicitFileTypes = {
-			};
-			explicitFolders = (
-			);
-			path = PanarRunWidget;
-			sourceTree = "<group>";
-		};
-/* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		73096F2B242C76FCFABD3E7D /* Frameworks */ = {
@@ -147,15 +99,6 @@
 			buildActionMask = 2147483647;
 			files = (
 				2012D6757A633C31AF2DBCCD /* Pods_Runner.framework in Frameworks */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		AD8B58372F8D84990065A659 /* Frameworks */ = {
-			isa = PBXFrameworksBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				AD8B583E2F8D84990065A659 /* SwiftUI.framework in Frameworks */,
-				AD8B583C2F8D84990065A659 /* WidgetKit.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -198,7 +141,6 @@
 				AD038E8A2F918AEB00B9BF21 /* GoogleService-Info.plist */,
 				9740EEB11CF90186004384FC /* Flutter */,
 				97C146F01CF9000F007C117D /* Runner */,
-				AD8B583F2F8D84990065A659 /* PanarRunWidget */,
 				97C146EF1CF9000F007C117D /* Products */,
 				331C8082294A63A400263BE5 /* RunnerTests */,
 				C30F443AE0B19D717CB3393A /* Pods */,
@@ -211,7 +153,6 @@
 			children = (
 				97C146EE1CF9000F007C117D /* Runner.app */,
 				331C8081294A63A400263BE5 /* RunnerTests.xctest */,
-				AD8B583A2F8D84990065A659 /* PanarRunWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -286,32 +227,11 @@
 			buildRules = (
 			);
 			dependencies = (
-				AD8B584E2F8D849B0065A659 /* PBXTargetDependency */,
 			);
 			name = Runner;
 			productName = Runner;
 			productReference = 97C146EE1CF9000F007C117D /* Runner.app */;
 			productType = "com.apple.product-type.application";
-		};
-		AD8B58392F8D84990065A659 /* PanarRunWidgetExtension */ = {
-			isa = PBXNativeTarget;
-			buildConfigurationList = AD8B58552F8D849B0065A659 /* Build configuration list for PBXNativeTarget "PanarRunWidgetExtension" */;
-			buildPhases = (
-				AD8B58362F8D84990065A659 /* Sources */,
-				AD8B58372F8D84990065A659 /* Frameworks */,
-				AD8B58382F8D84990065A659 /* Resources */,
-			);
-			buildRules = (
-			);
-			dependencies = (
-			);
-			fileSystemSynchronizedGroups = (
-				AD8B583F2F8D84990065A659 /* PanarRunWidget */,
-			);
-			name = PanarRunWidgetExtension;
-			productName = PanarRunWidgetExtension;
-			productReference = AD8B583A2F8D84990065A659 /* PanarRunWidgetExtension.appex */;
-			productType = "com.apple.product-type.app-extension";
 		};
 /* End PBXNativeTarget section */
 
@@ -332,9 +252,6 @@
 						CreatedOnToolsVersion = 7.3.1;
 						LastSwiftMigration = 1100;
 					};
-					AD8B58392F8D84990065A659 = {
-						CreatedOnToolsVersion = 26.3;
-					};
 				};
 			};
 			buildConfigurationList = 97C146E91CF9000F007C117D /* Build configuration list for PBXProject "Runner" */;
@@ -352,7 +269,6 @@
 			targets = (
 				97C146ED1CF9000F007C117D /* Runner */,
 				331C8080294A63A400263BE5 /* RunnerTests */,
-				AD8B58392F8D84990065A659 /* PanarRunWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
@@ -375,14 +291,6 @@
 				AD038E8D2F918AEB00B9BF21 /* GoogleService-Info.plist in Resources */,
 				97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
-		AD8B58382F8D84990065A659 /* Resources */ = {
-			isa = PBXResourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-				AD038E8C2F918AEB00B9BF21 /* GoogleService-Info.plist in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -519,13 +427,6 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
-		AD8B58362F8D84990065A659 /* Sources */ = {
-			isa = PBXSourcesBuildPhase;
-			buildActionMask = 2147483647;
-			files = (
-			);
-			runOnlyForDeploymentPostprocessing = 0;
-		};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -533,11 +434,6 @@
 			isa = PBXTargetDependency;
 			target = 97C146ED1CF9000F007C117D /* Runner */;
 			targetProxy = 331C8085294A63A400263BE5 /* PBXContainerItemProxy */;
-		};
-		AD8B584E2F8D849B0065A659 /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = AD8B58392F8D84990065A659 /* PanarRunWidgetExtension */;
-			targetProxy = AD8B584D2F8D849B0065A659 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 
@@ -859,135 +755,6 @@
 			};
 			name = Release;
 		};
-		AD8B58512F8D849B0065A659 /* Debug */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = AppIcon;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_ENTITLEMENTS = PanarRunWidget/PanarRunWidget.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4PPZC4437W;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = PanarRunWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = PanarRunWidget;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.brazil.Panar.health.PanarRunWidget;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Debug;
-		};
-		AD8B58522F8D849B0065A659 /* Release */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = AppIcon;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_ENTITLEMENTS = PanarRunWidget/PanarRunWidget.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4PPZC4437W;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = PanarRunWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = PanarRunWidget;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
-				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.brazil.Panar.health.PanarRunWidget;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Release;
-		};
-		AD8B58532F8D849B0065A659 /* Profile */ = {
-			isa = XCBuildConfiguration;
-			buildSettings = {
-				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AppIcon;
-				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = AppIcon;
-				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
-				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
-				CLANG_ENABLE_OBJC_WEAK = YES;
-				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
-				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
-				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
-				CODE_SIGN_ENTITLEMENTS = PanarRunWidget/PanarRunWidget.entitlements;
-				CODE_SIGN_STYLE = Automatic;
-				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = 4PPZC4437W;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
-				GCC_C_LANGUAGE_STANDARD = gnu17;
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = PanarRunWidget/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = PanarRunWidget;
-				INFOPLIST_KEY_NSHumanReadableCopyright = "";
-				IPHONEOS_DEPLOYMENT_TARGET = 16.2;
-				LD_RUNPATH_SEARCH_PATHS = (
-					"$(inherited)",
-					"@executable_path/Frameworks",
-					"@executable_path/../../Frameworks",
-				);
-				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
-				MARKETING_VERSION = 1.0;
-				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = com.brazil.Panar.health.PanarRunWidget;
-				PRODUCT_NAME = "$(TARGET_NAME)";
-				SKIP_INSTALL = YES;
-				STRING_CATALOG_GENERATE_SYMBOLS = YES;
-				SWIFT_APPROACHABLE_CONCURRENCY = YES;
-				SWIFT_EMIT_LOC_STRINGS = YES;
-				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
-				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2";
-			};
-			name = Profile;
-		};
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -1017,16 +784,6 @@
 				97C147061CF9000F007C117D /* Debug */,
 				97C147071CF9000F007C117D /* Release */,
 				249021D4217E4FDB00AE95B9 /* Profile */,
-			);
-			defaultConfigurationIsVisible = 0;
-			defaultConfigurationName = Release;
-		};
-		AD8B58552F8D849B0065A659 /* Build configuration list for PBXNativeTarget "PanarRunWidgetExtension" */ = {
-			isa = XCConfigurationList;
-			buildConfigurations = (
-				AD8B58512F8D849B0065A659 /* Debug */,
-				AD8B58522F8D849B0065A659 /* Release */,
-				AD8B58532F8D849B0065A659 /* Profile */,
 			);
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
