@@ -438,6 +438,11 @@ class _ActivitiesTab extends ConsumerWidget {
                 subtitle: 'Récap de tes stats d\'activité',
               ),
               const SizedBox(height: 16),
+              PanarButton(
+                label: 'Importer les données',
+                onPressed: () => context.push(Routes.runImport),
+              ),
+              const SizedBox(height: 16),
               Text('Dernières activités', style: theme.textTheme.titleMedium),
               const SizedBox(height: 10),
               ActivityTimelineList(activities: activities),

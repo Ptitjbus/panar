@@ -187,12 +187,12 @@ class ChallengesPage extends ConsumerWidget {
               ],
 
               if (activeDuels.isNotEmpty || activeGroupChallenges.isNotEmpty) ...[
-                _SectionHeader(title: 'Défis en cours'),
+                _SectionHeader(title: 'Défis activés'),
                 SliverToBoxAdapter(
                   child: _HorizontalCardList(
                     children: [
                       ...activeDuels.map(
-                        (d) => _DuelMiniCard(duel: d, statusLabel: 'En cours'),
+                        (d) => _DuelMiniCard(duel: d, statusLabel: 'Activé'),
                       ),
                       ...activeGroupChallenges.map(
                         (c) => _GroupChallengeMiniCard(challenge: c),
@@ -519,7 +519,7 @@ class _GroupChallengeMiniCard extends StatelessWidget {
                         children: [
                           _Chip(label: targetLabel, dark: false),
                           const SizedBox(width: 4),
-                          _Chip(label: 'En cours', dark: true),
+                          _Chip(label: 'Activé', dark: true),
                         ],
                       ),
                     ],

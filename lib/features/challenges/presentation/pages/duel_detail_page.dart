@@ -6,7 +6,7 @@ import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 import '../../../../core/constants/app_colors.dart';
-import '../../../../core/constants/route_constants.dart';
+
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../domain/entities/duel_entity.dart';
 import '../providers/duel_provider.dart';
@@ -35,30 +35,14 @@ class _DuelDetailPageState extends ConsumerState<DuelDetailPage> {
         .respondToDuel(widget.duelId, accept: true);
     if (!success || !mounted) return;
 
-    final start = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Défi accepté !'),
-        content: const Text('Tu veux commencer ta course maintenant ?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(false),
-            child: const Text('Plus tard'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(true),
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.success,
-            ),
-            child: const Text('Commencer'),
-          ),
-        ],
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Défi activé ! Lance une course depuis le bouton principal.',
+        ),
+        duration: Duration(seconds: 3),
       ),
     );
-
-    if (start == true && mounted) {
-      context.push(Routes.runTracking);
-    }
   }
 
   Future<void> _confirmCancel(String duelId) async {
@@ -114,9 +98,8 @@ class _DuelDetailPageState extends ConsumerState<DuelDetailPage> {
 
     final isPendingInvite =
         duel.status == DuelStatus.pending && duel.challengedId == currentUserId;
-    final canRun = duel.status == DuelStatus.accepted ||
-        duel.status == DuelStatus.active ||
-        (duel.isSolo && duel.status == DuelStatus.pending);
+    // canActivate: only for solo pending (not already accepted/active)
+    final canActivate = duel.isSolo && duel.status == DuelStatus.pending;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -137,9 +120,21 @@ class _DuelDetailPageState extends ConsumerState<DuelDetailPage> {
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: _CenterActionCard(
                 duel: duel,
-                onTap: canRun ? () => context.push(Routes.runTracking) : null,
-                onRunTap: duel.status == DuelStatus.active
-                    ? () => context.push(Routes.runTracking)
+                onActivate: canActivate
+                    ? () async {
+                        await ref
+                            .read(duelNotifierProvider.notifier)
+                            .respondToDuel(widget.duelId, accept: true);
+                        if (!context.mounted) return;
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text(
+                              'Défi activé ! Lance une course depuis le bouton principal.',
+                            ),
+                            duration: Duration(seconds: 3),
+                          ),
+                        );
+                      }
                     : null,
               ),
             ),
@@ -328,6 +323,18 @@ class _TopHero extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          GestureDetector(
+            onTap: () => Navigator.of(context).pop(),
+            child: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.5),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.arrow_back, size: 20),
+            ),
+          ),
+          const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
             decoration: BoxDecoration(
@@ -361,17 +368,13 @@ class _TopHero extends StatelessWidget {
 
 class _CenterActionCard extends StatelessWidget {
   final DuelEntity duel;
-  final VoidCallback? onTap;
-  final VoidCallback? onRunTap;
+  final VoidCallback? onActivate;
 
-  const _CenterActionCard({
-    required this.duel,
-    required this.onTap,
-    this.onRunTap,
-  });
+  const _CenterActionCard({required this.duel, this.onActivate});
 
   @override
   Widget build(BuildContext context) {
+    // Already active — show progress only
     if (duel.status == DuelStatus.active) {
       final challengerDone = duel.challengerActivityId != null;
       final challengedDone = duel.challengedActivityId != null;
@@ -390,15 +393,26 @@ class _CenterActionCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            Row(
+              children: [
+                const Icon(Icons.check_circle_outline, size: 18),
+                const SizedBox(width: 6),
+                Text(
+                  'Défi activé',
+                  style: GoogleFonts.inter(
+                    fontSize: 15,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
             if (!duel.isSolo) ...[
+              const SizedBox(height: 8),
               Text(
                 '$doneCount / $total courses terminées',
-                style: GoogleFonts.inter(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: GoogleFonts.inter(fontSize: 13),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               ClipRRect(
                 borderRadius: BorderRadius.circular(999),
                 child: LinearProgressIndicator(
@@ -408,40 +422,42 @@ class _CenterActionCard extends StatelessWidget {
                   valueColor: const AlwaysStoppedAnimation<Color>(Colors.black),
                 ),
               ),
-              const SizedBox(height: 12),
             ],
-            SizedBox(
-              width: double.infinity,
-              height: 52,
-              child: FilledButton.icon(
-                onPressed: onRunTap,
-                style: FilledButton.styleFrom(
-                  backgroundColor: AppColors.success,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                ),
-                icon: const Icon(Icons.directions_run, size: 20),
-                label: Text(
-                  'Courir maintenant',
-                  style: GoogleFonts.inter(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
-                ),
-              ),
+          ],
+        ),
+      );
+    }
+
+    // Already accepted (activated) — show badge only, no button
+    if (duel.status == DuelStatus.accepted) {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: const Color(0xFFD1D1D1),
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          children: [
+            const Icon(Icons.check_circle_outline, size: 18),
+            const SizedBox(width: 8),
+            Text(
+              'Défi activé — lance ta course depuis le bouton principal',
+              style: GoogleFonts.inter(fontSize: 13),
             ),
           ],
         ),
       );
     }
 
+    // Not yet activated — show button only if action is available
+    if (onActivate == null) return const SizedBox.shrink();
+
     return SizedBox(
       width: double.infinity,
       height: 52,
       child: FilledButton(
-        onPressed: onTap,
+        onPressed: onActivate,
         style: FilledButton.styleFrom(
           backgroundColor: AppColors.success,
           foregroundColor: Colors.white,
@@ -450,7 +466,7 @@ class _CenterActionCard extends StatelessWidget {
           ),
         ),
         child: Text(
-          'Lancer le défi',
+          'Activer le défi',
           style: GoogleFonts.inter(fontSize: 18, fontWeight: FontWeight.w700),
         ),
       ),

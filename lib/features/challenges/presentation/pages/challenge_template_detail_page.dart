@@ -284,10 +284,10 @@ class _ChallengeTemplateDetailPageState
                       )
                     : Text(
                         template.isSolo
-                            ? 'Lancer le défi'
+                            ? 'Activer le défi'
                             : (_selectedFriendIds.isEmpty
-                                ? 'Sélectionne des amis pour lancer'
-                                : 'Lancer avec ${_selectedFriendIds.length} ami${_selectedFriendIds.length > 1 ? 's' : ''}'),
+                                ? 'Sélectionne des amis pour activer'
+                                : 'Activer avec ${_selectedFriendIds.length} ami${_selectedFriendIds.length > 1 ? 's' : ''}'),
                         style: GoogleFonts.inter(
                           fontSize: 16,
                           fontWeight: FontWeight.w700,

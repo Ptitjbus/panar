@@ -43,6 +43,15 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
   }
 
   @override
+  void didUpdateWidget(MainLayout oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (widget.initialIndex != oldWidget.initialIndex &&
+        widget.initialIndex != _currentIndex) {
+      _onItemTapped(widget.initialIndex);
+    }
+  }
+
+  @override
   void dispose() {
     _pageController.dispose();
     super.dispose();
@@ -128,7 +137,7 @@ class _MainLayoutState extends ConsumerState<MainLayout> {
                   variant: variant,
                 ),
           );
-          context.push(Routes.runLaunch);
+          context.push(Routes.runTracking);
         },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,

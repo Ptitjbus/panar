@@ -10,6 +10,7 @@ import '../../../../core/constants/route_constants.dart';
 import '../../../../core/experiments/app_experiments.dart';
 import '../../../../core/services/analytics_service.dart';
 import '../../../../core/services/remote_config_service.dart';
+import '../../../../shared/widgets/animated_avatar_widget.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
 import '../../../friends/presentation/providers/friends_provider.dart';
 import '../../../friends/presentation/widgets/friend_list_item.dart';
@@ -21,9 +22,11 @@ import '../../../live_interactions/domain/entities/run_interaction_entity.dart';
 import '../../../live_interactions/presentation/providers/live_interactions_provider.dart';
 import '../../../live_interactions/presentation/providers/run_session_provider.dart';
 import '../providers/avatar_provider.dart';
+import '../providers/presence_provider.dart';
 import '../../domain/entities/avatar_entity.dart';
 import '../../domain/entities/avatar_mood.dart';
 import '../../../live_interactions/domain/entities/run_session_entity.dart';
+import '../../../profile/presentation/providers/profile_provider.dart';
 import '../widgets/avatar_widget.dart';
 import '../widgets/quick_interaction_sheet.dart';
 
@@ -187,6 +190,146 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
     context.go(Routes.home, extra: {'index': 3});
   }
 
+  void _showOwnAvatarSheet(AvatarEntity avatar) {
+    final profileAsync = ref.read(userProfileProvider);
+    final user = ref.read(authStateProvider).value;
+    final username = profileAsync.valueOrNull?.username ??
+        user?.userMetadata?['username'] as String? ??
+        user?.email.split('@').firstOrNull ??
+        '';
+    final displayName =
+        (avatar.displayName != null && avatar.displayName!.isNotEmpty
+            ? avatar.displayName!
+            : username);
+
+    Color parseColor(String hex) {
+      try {
+        return Color(int.parse(hex.replaceFirst('#', '0xFF')));
+      } catch (_) {
+        return const Color(0xFFF4A574);
+      }
+    }
+
+    showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        final safeBottom = MediaQuery.of(ctx).padding.bottom;
+        return Container(
+          padding: EdgeInsets.fromLTRB(16, 10, 16, 16 + safeBottom),
+          decoration: const BoxDecoration(color: Colors.transparent),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 44,
+                height: 5,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.9),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              ),
+              const SizedBox(height: 12),
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.fromLTRB(14, 16, 14, 16),
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Color(0x26000000),
+                      blurRadius: 18,
+                      offset: Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 52,
+                          height: 52,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(999),
+                            border: Border.all(
+                              color: AppColors.textPrimary.withValues(alpha: 0.1),
+                            ),
+                          ),
+                          padding: const EdgeInsets.all(6),
+                          child: AnimatedAvatarWidget(
+                            isMoving: false,
+                            size: 32,
+                            colorFilter: parseColor(avatar.colorHex),
+                            showShadow: false,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                displayName,
+                                style: GoogleFonts.londrinaSolid(
+                                  color: AppColors.textPrimary,
+                                  fontSize: 26,
+                                  fontWeight: FontWeight.w900,
+                                  height: 1,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '@$username',
+                                style: GoogleFonts.inter(
+                                  color: AppColors.textSecondary,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 14),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: _OwnAvatarActionButton(
+                            label: 'Mon profil',
+                            icon: Icons.person_outline_rounded,
+                            onTap: () {
+                              Navigator.of(ctx).pop();
+                              _openProfileTab();
+                            },
+                          ),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: _OwnAvatarActionButton(
+                            label: 'Mon peton',
+                            icon: Icons.edit_outlined,
+                            onTap: () {
+                              Navigator.of(ctx).pop();
+                              context.push(Routes.editAvatar);
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
   void _openFriendSearchDialog() {
     showDialog(
       context: context,
@@ -258,13 +401,13 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
     AvatarEntity avatar, {
     required String username,
     RunSessionEntity? session,
+    bool isOnline = false,
   }) {
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       isScrollControlled: true,
       builder: (sheetContext) {
-        final isOnline = session != null;
         return QuickInteractionSheet(
           avatar: avatar,
           username: username,
@@ -613,6 +756,8 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
     final activeSessionsByUserId = {
       for (final s in activeSessions) s.userId: s,
     };
+    final onlineUsersAsync = ref.watch(onlineUsersProvider);
+    final onlineUserIds = onlineUsersAsync.valueOrNull ?? {};
 
     return SafeArea(
       top: false, // Allow map to extend behind AppBar
@@ -634,31 +779,30 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
                   key: const ValueKey('user_avatar'),
                   avatar: avatar,
                   mood: mood,
+                  isOnline: true,
                   onPositionChanged: _onAvatarPositionChanged,
-                  onTap: _openProfileTab,
+                  onTap: () => _showOwnAvatarSheet(avatar),
                 ),
                 // Friends avatars (on top)
                 ...friendsAvatarsAsync.when(
                   data: (friendsAvatars) => friendsAvatars.map((friendAvatar) {
-                    // Create a random initial position for each friend closely around the center
                     final random = math.Random(friendAvatar.id.hashCode);
-                    final distance =
-                        60 + random.nextDouble() * 100; // max 160 px distance
+                    final distance = 60 + random.nextDouble() * 100;
                     final angle = random.nextDouble() * 2 * math.pi;
                     final initialPosition = Offset(
                       1000 + math.cos(angle) * distance,
                       1000 + math.sin(angle) * distance,
                     );
 
-                    final isRunning = activeFriendIds.contains(
-                      friendAvatar.userId,
-                    );
+                    final isRunning = activeFriendIds.contains(friendAvatar.userId);
+                    final isOnline = onlineUserIds.contains(friendAvatar.userId);
 
                     return AvatarWidget(
                       key: ValueKey('friend_${friendAvatar.id}'),
                       avatar: friendAvatar,
                       initialPosition: initialPosition,
                       isRunning: isRunning,
+                      isOnline: isOnline || isRunning,
                       onTap: () => _showQuickInteractionSheet(
                         friendAvatar,
                         username:
@@ -666,6 +810,7 @@ class _PlaceScreenState extends ConsumerState<PlaceScreen>
                             friendAvatar.displayName ??
                             '',
                         session: activeSessionsByUserId[friendAvatar.userId],
+                        isOnline: isOnline || isRunning,
                       ),
                     );
                   }).toList(),
@@ -827,6 +972,48 @@ class _TabToggle extends StatelessWidget {
             ),
           );
         }),
+      ),
+    );
+  }
+}
+
+class _OwnAvatarActionButton extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final VoidCallback onTap;
+
+  const _OwnAvatarActionButton({
+    required this.label,
+    required this.icon,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        height: 48,
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        decoration: BoxDecoration(
+          color: AppColors.textPrimary,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 16, color: Colors.white),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: GoogleFonts.inter(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }

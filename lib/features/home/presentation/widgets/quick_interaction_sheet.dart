@@ -143,7 +143,7 @@ class QuickInteractionSheet extends StatelessWidget {
                       ),
                   ],
                 ),
-                if (isOnline) ...[
+                if (onCheer != null) ...[
                   const SizedBox(height: 12),
                   Align(
                     alignment: Alignment.centerLeft,

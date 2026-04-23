@@ -42,7 +42,24 @@ class DuelsPage extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const PanarBreadcrumb('Collaboration'),
+                      Row(
+                        children: [
+                          GestureDetector(
+                            onTap: () => Navigator.of(context).pop(),
+                            child: Container(
+                              width: 36,
+                              height: 36,
+                              margin: const EdgeInsets.only(right: 10),
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(Icons.arrow_back, size: 18),
+                            ),
+                          ),
+                          const PanarBreadcrumb('Collaboration'),
+                        ],
+                      ),
                       const SizedBox(height: 12),
                       Text(
                         'A deux on va plus loin !',

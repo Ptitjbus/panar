@@ -10,6 +10,7 @@ class AvatarWidget extends StatefulWidget {
   final void Function(Offset position)? onPositionChanged;
   final VoidCallback? onTap;
   final bool isRunning;
+  final bool isOnline;
   final AvatarMood mood;
 
   const AvatarWidget({
@@ -19,6 +20,7 @@ class AvatarWidget extends StatefulWidget {
     this.onPositionChanged,
     this.onTap,
     this.isRunning = false,
+    this.isOnline = false,
     this.mood = AvatarMood.neutral,
   });
 
@@ -99,6 +101,27 @@ class _AvatarWidgetState extends State<AvatarWidget> {
                           fontSize: 9,
                           fontWeight: FontWeight.bold,
                         ),
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            else if (widget.isOnline)
+              Positioned(
+                bottom: 8,
+                right: 8,
+                child: Container(
+                  width: 14,
+                  height: 14,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF00C853),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 2),
+                    boxShadow: const [
+                      BoxShadow(
+                        color: Colors.black26,
+                        blurRadius: 3,
+                        offset: Offset(0, 1),
                       ),
                     ],
                   ),

@@ -119,7 +119,24 @@ class _RunStatsPageState extends ConsumerState<RunStatsPage>
               children: [
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 24, 20, 0),
-                  child: const PanarBreadcrumb('Récapitulatif'),
+                  child: Row(
+                    children: [
+                      GestureDetector(
+                        onTap: () => Navigator.of(context).pop(),
+                        child: Container(
+                          width: 36,
+                          height: 36,
+                          margin: const EdgeInsets.only(right: 10),
+                          decoration: BoxDecoration(
+                            color: AppColors.surface,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(Icons.arrow_back, size: 18),
+                        ),
+                      ),
+                      const PanarBreadcrumb('Récapitulatif'),
+                    ],
+                  ),
                 ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(20, 12, 20, 0),

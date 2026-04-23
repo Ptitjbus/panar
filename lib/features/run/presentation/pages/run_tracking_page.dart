@@ -6,11 +6,14 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:google_fonts/google_fonts.dart';
 
+import '../../../../core/constants/app_colors.dart';
 import '../../../../core/constants/route_constants.dart';
 import '../../../../core/experiments/app_experiments.dart';
 import '../../../../core/services/analytics_service.dart';
 import '../../../../core/services/remote_config_service.dart';
 import '../../../auth/presentation/providers/auth_provider.dart';
+import '../../../challenges/domain/entities/duel_entity.dart';
+import '../../../challenges/presentation/providers/duel_provider.dart';
 import '../../../live_interactions/domain/entities/run_interaction_entity.dart';
 import '../../../live_interactions/presentation/providers/live_interactions_provider.dart';
 import '../../../live_interactions/presentation/widgets/interaction_overlay_widget.dart';
@@ -36,28 +39,35 @@ class _RunTrackingPageState extends ConsumerState<RunTrackingPage> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
-      ref.read(runTrackingProvider.notifier).startRun();
-      final variant = ref.read(
-        trackedExperimentVariantProvider(
-          AppExperimentKeys.runLaunchLiveVariant,
-        ),
-      );
-      unawaited(
-        ref
-            .read(analyticsServiceProvider)
-            .logFunnelStep(
-              funnel: 'run_launch',
-              step: 'run_tracking_opened',
-              source: 'run_tracking_page',
-              variant: variant,
-            ),
-      );
+      if (!mounted) return;
+      ref.read(runTrackingProvider.notifier).resetRun();
     });
+  }
+
+  Future<void> _startRun() async {
+    final variant = ref.read(
+      trackedExperimentVariantProvider(
+        AppExperimentKeys.runLaunchLiveVariant,
+      ),
+    );
+    unawaited(
+      ref
+          .read(analyticsServiceProvider)
+          .logFunnelStep(
+            funnel: 'run_launch',
+            step: 'run_tracking_opened',
+            source: 'run_tracking_page',
+            variant: variant,
+          ),
+    );
+    await ref.read(runTrackingProvider.notifier).startRun();
   }
 
   @override
   Widget build(BuildContext context) {
     final runState = ref.watch(runTrackingProvider);
+
+    final isIdle = runState.status == RunStatus.idle;
 
     return PopScope(
       canPop: false,
@@ -68,9 +78,11 @@ class _RunTrackingPageState extends ConsumerState<RunTrackingPage> {
         backgroundColor: Colors.white,
         body: Stack(
           children: [
-            _showDataView
-                ? _DataView(runState: runState)
-                : _MascotView(runState: runState),
+            // Background + mascot always visible
+            _MascotView(runState: runState, showStats: !isIdle),
+
+            // Data view when running/paused and toggled
+            if (!isIdle && _showDataView) _DataView(runState: runState),
 
             if (runState.errorMessage != null)
               Positioned(
@@ -105,22 +117,27 @@ class _RunTrackingPageState extends ConsumerState<RunTrackingPage> {
                 ),
               ),
 
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: _ControlsBar(
-                runState: runState,
-                showDataView: _showDataView,
-                onToggleView: () =>
-                    setState(() => _showDataView = !_showDataView),
-                onPause: () =>
-                    ref.read(runTrackingProvider.notifier).pauseRun(),
-                onResume: () =>
-                    ref.read(runTrackingProvider.notifier).resumeRun(),
-                onStop: _handleStop,
+            // Prep overlay in idle state
+            if (isIdle) _PrepOverlay(onStart: _startRun),
+
+            // Controls bar when active
+            if (!isIdle)
+              Positioned(
+                bottom: 0,
+                left: 0,
+                right: 0,
+                child: _ControlsBar(
+                  runState: runState,
+                  showDataView: _showDataView,
+                  onToggleView: () =>
+                      setState(() => _showDataView = !_showDataView),
+                  onPause: () =>
+                      ref.read(runTrackingProvider.notifier).pauseRun(),
+                  onResume: () =>
+                      ref.read(runTrackingProvider.notifier).resumeRun(),
+                  onStop: _handleStop,
+                ),
               ),
-            ),
           ],
         ),
       ),
@@ -267,7 +284,11 @@ class _RunTrackingPageState extends ConsumerState<RunTrackingPage> {
       if (!mounted) return;
       context.go(Routes.home);
     } else {
-      context.go(Routes.home);
+      if (context.canPop()) {
+        context.pop();
+      } else {
+        context.go(Routes.home);
+      }
     }
   }
 
@@ -342,12 +363,219 @@ class _RunTrackingPageState extends ConsumerState<RunTrackingPage> {
   }
 }
 
+// ─── Vue Préparation (overlay) ───────────────────────────────────────────────
+
+class _PrepOverlay extends ConsumerWidget {
+  final Future<void> Function() onStart;
+
+  const _PrepOverlay({required this.onStart});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final duelState = ref.watch(duelNotifierProvider);
+    final topPadding = MediaQuery.of(context).padding.top;
+    final bottomPadding = MediaQuery.of(context).padding.bottom;
+    final theme = Theme.of(context);
+
+    final activeDuels = duelState.myDuels
+        .where(
+          (d) =>
+              d.status == DuelStatus.active || d.status == DuelStatus.accepted,
+        )
+        .toList();
+
+    return Positioned.fill(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          // Transparent top — back button only
+          Padding(
+            padding: EdgeInsets.fromLTRB(16, topPadding + 12, 16, 0),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () {
+                    if (context.canPop()) context.pop();
+                  },
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.85),
+                      shape: BoxShape.circle,
+                      boxShadow: const [
+                        BoxShadow(
+                          color: Colors.black26,
+                          blurRadius: 6,
+                          offset: Offset(0, 2),
+                        ),
+                      ],
+                    ),
+                    child: const Icon(Icons.arrow_back, size: 20),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          // Spacer — background + avatar visible through here
+          const Spacer(),
+
+          // Bottom panel
+          Container(
+            decoration: BoxDecoration(
+              color: AppColors.background.withValues(alpha: 0.97),
+              borderRadius:
+                  const BorderRadius.vertical(top: Radius.circular(24)),
+            ),
+            padding: EdgeInsets.fromLTRB(20, 20, 20, 16 + bottomPadding),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Prêt à courir !', style: theme.textTheme.headlineMedium),
+                const SizedBox(height: 2),
+                Text(
+                  'Lance ta course et relève tes défis activés.',
+                  style: theme.textTheme.bodyMedium,
+                ),
+                const SizedBox(height: 16),
+                Text('Défis activés', style: theme.textTheme.titleSmall),
+                const SizedBox(height: 8),
+                if (activeDuels.isEmpty)
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Text(
+                      'Aucun défi activé — active un défi depuis l\'onglet Défis.',
+                      style: theme.textTheme.bodySmall?.copyWith(
+                        color: AppColors.textSecondary,
+                      ),
+                    ),
+                  )
+                else
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxHeight: 160),
+                    child: ListView.separated(
+                      shrinkWrap: true,
+                      itemCount: activeDuels.length,
+                      separatorBuilder: (_, _) => const SizedBox(height: 6),
+                      itemBuilder: (_, i) =>
+                          _ActiveDuelTile(duel: activeDuels[i]),
+                    ),
+                  ),
+                const SizedBox(height: 16),
+                SizedBox(
+                  width: double.infinity,
+                  height: 60,
+                  child: FilledButton.icon(
+                    onPressed: onStart,
+                    icon: const Icon(Icons.play_arrow_rounded, size: 28),
+                    label: Text(
+                      'Démarrer la course',
+                      style: GoogleFonts.inter(
+                        fontSize: 18,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ActiveDuelTile extends StatelessWidget {
+  final DuelEntity duel;
+
+  const _ActiveDuelTile({required this.duel});
+
+  @override
+  Widget build(BuildContext context) {
+    final desc = duel.description ?? '';
+    final name = desc.contains(' • ') ? desc.split(' • ').first.trim() : desc;
+    final target = duel.targetDistanceMeters;
+    final targetLabel = target != null
+        ? '${(target / 1000).toStringAsFixed(0)} km'
+        : '—';
+    final icon = duel.isSolo ? '🏃' : '⚔️';
+
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: Row(
+        children: [
+          Text(icon, style: const TextStyle(fontSize: 24)),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  name.isNotEmpty ? name : 'Défi',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  targetLabel,
+                  style: const TextStyle(
+                    fontSize: 12,
+                    color: AppColors.textSecondary,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceDark,
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              duel.status == DuelStatus.active ? 'En cours' : 'Accepté',
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 // ─── Vue Mascotte ───────────────────────────────────────────────────────────
 
 class _MascotView extends StatelessWidget {
-  const _MascotView({required this.runState});
+  const _MascotView({required this.runState, this.showStats = true});
 
   final RunTrackingState runState;
+  final bool showStats;
 
   @override
   Widget build(BuildContext context) {
@@ -379,23 +607,24 @@ class _MascotView extends StatelessWidget {
           ),
         ),
 
-        // Stat pills
-        Positioned(
-          top: topPadding + 16,
-          left: 16,
-          right: 16,
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: [
-              _StatPill(label: 'Temps', value: runState.formattedDuration),
-              _StatPill(
-                label: 'Distance',
-                value: '${runState.formattedDistance} km',
-              ),
-              _StatPill(label: 'Allure', value: runState.formattedPace),
-            ],
+        // Stat pills — only when running/paused
+        if (showStats)
+          Positioned(
+            top: topPadding + 16,
+            left: 16,
+            right: 16,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                _StatPill(label: 'Temps', value: runState.formattedDuration),
+                _StatPill(
+                  label: 'Distance',
+                  value: '${runState.formattedDistance} km',
+                ),
+                _StatPill(label: 'Allure', value: runState.formattedPace),
+              ],
+            ),
           ),
-        ),
 
         // Mascot
         Positioned(
@@ -658,14 +887,20 @@ class _ControlsBar extends StatelessWidget {
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Bouton objectif (vue mascotte)
+          // Bouton carte (vue mascotte) — fond jaune quand sélectionné
           _CircleButton(
             size: 63,
-            backgroundColor: showDataView ? Colors.black : Colors.black,
+            backgroundColor: !showDataView
+                ? const Color(0xFFF8FDAB)
+                : Colors.black,
             onPressed: () {
               if (showDataView) onToggleView();
             },
-            child: const Text('🎯', style: TextStyle(fontSize: 25)),
+            child: Icon(
+              Icons.map_outlined,
+              size: 26,
+              color: !showDataView ? Colors.black : Colors.white,
+            ),
           ),
 
           // Contrôle central (pause/reprise + arrêt explicite)

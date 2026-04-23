@@ -68,15 +68,21 @@ class NotificationSetupService {
   static Future<void> _registerToken() async {
     try {
       if (defaultTargetPlatform == TargetPlatform.iOS) {
-        // Il faut parfois attendre que l'OS fournisse le token APNs
-        String? apnsToken = await FirebaseMessaging.instance.getAPNSToken();
-        if (apnsToken == null) {
-          await Future<void>.delayed(const Duration(seconds: 8));
+        // L'OS peut mettre plusieurs secondes à fournir le token APNs —
+        // on tente jusqu'à 5 fois avec des délais croissants.
+        String? apnsToken;
+        for (int attempt = 1; attempt <= 5; attempt++) {
           apnsToken = await FirebaseMessaging.instance.getAPNSToken();
+          if (apnsToken != null) break;
+          final waitSeconds = attempt * 3; // 3, 6, 9, 12, 15 s
+          debugPrint(
+            '[Notifications] APNS token null — tentative $attempt, attente ${waitSeconds}s…',
+          );
+          await Future<void>.delayed(Duration(seconds: waitSeconds));
         }
         if (apnsToken == null) {
           debugPrint(
-            '[Notifications] APNS token toujours null après attente — abandon.',
+            '[Notifications] APNS token toujours null après 5 tentatives — abandon.',
           );
           return;
         }
@@ -85,8 +91,10 @@ class NotificationSetupService {
 
       final token = await FirebaseMessaging.instance.getToken();
       if (token != null) {
-        debugPrint('[Notifications] FCM TOKEN: $token'); // ← ajoute ça
+        debugPrint('[Notifications] FCM token: $token');
         await _upsertToken(token);
+      } else {
+        debugPrint('[Notifications] FCM token null — vérifier la configuration Firebase/APNs.');
       }
     } catch (e) {
       debugPrint('[Notifications] Erreur register token: $e');
